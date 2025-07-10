@@ -2,49 +2,86 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Scan Barcode EAN-13</title>
+  <title>Scan Barcode EAN-13 ke Tabel</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       padding: 20px;
+      text-align: center;
     }
     #reader {
       width: 300px;
       margin: auto;
     }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #f4f4f4;
     }
   </style>
 </head>
 <body>
   <h2>Scan Barcode EAN-13</h2>
+
   <div id="reader"></div>
-  <div id="result">Menunggu scan...</div>
+  <table>
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Barcode</th>
+        <th>Waktu</th>
+      </tr>
+    </thead>
+    <tbody id="scanTable">
+      <!-- Hasil scan akan ditambahkan di sini -->
+    </tbody>
+  </table>
 
   <script>
-    const resultElem = document.getElementById('result');
+    const scannedSet = new Set();
+    const tableBody = document.getElementById("scanTable");
+    let count = 0;
+
+    function addToTable(code) {
+      if (scannedSet.has(code)) return; // Cegah duplikat
+      scannedSet.add(code);
+      count++;
+
+      const row = document.createElement("tr");
+      const waktu = new Date().toLocaleTimeString();
+
+      row.innerHTML = `
+        <td>${count}</td>
+        <td>${code}</td>
+        <td>${waktu}</td>
+      `;
+      tableBody.appendChild(row);
+    }
 
     function onScanSuccess(decodedText, decodedResult) {
-      resultElem.innerText = `Hasil Scan: ${decodedText}`;
-      // Stop scanning setelah berhasil (opsional)
-      html5QrcodeScanner.clear();
+      addToTable(decodedText);
     }
 
     function onScanFailure(error) {
-      // console.log(`Gagal scan: ${error}`);
+      // Tidak ditampilkan untuk mencegah spam log
     }
 
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: 250, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13 ] },
-      false
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    const scanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: 250,
+      formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
+    }, false);
+
+    scanner.render(onScanSuccess, onScanFailure);
   </script>
 </body>
 </html>
