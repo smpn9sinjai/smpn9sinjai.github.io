@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Scan Barcode EAN-13</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #reader {
+      width: 300px;
+      margin: auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Scan Barcode EAN-13</h2>
+  <div id="reader"></div>
+  <div id="result">Menunggu scan...</div>
+
+  <script>
+    const resultElem = document.getElementById('result');
+
+    function onScanSuccess(decodedText, decodedResult) {
+      resultElem.innerText = `Hasil Scan: ${decodedText}`;
+      // Stop scanning setelah berhasil (opsional)
+      html5QrcodeScanner.clear();
+    }
+
+    function onScanFailure(error) {
+      // console.log(`Gagal scan: ${error}`);
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      { fps: 10, qrbox: 250, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13 ] },
+      false
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+  </script>
+</body>
+</html>
