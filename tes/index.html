@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Offline</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 300px;
+    }
+    .card input {
+      width: 90%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .card button {
+      width: 100%;
+      padding: 10px;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .card button:hover { background: #0056b3; }
+    #status { margin-top: 10px; color: red; }
+    .hidden { display: none; }
+    .dashboard h2 { color: #007BFF; }
+    .logout {
+      background: #dc3545;
+    }
+    .logout:hover {
+      background: #a71d2a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Halaman Login -->
+  <div class="card" id="loginPage">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="status"></p>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="card hidden" id="dashboardPage">
+    <div class="dashboard">
+      <h2>Selamat Datang</h2>
+      <p>Anda berhasil login (bisa offline).</p>
+      <button class="logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+<script>
+  // ===== Login Offline =====
+  if (!localStorage.getItem("user")) {
+    localStorage.setItem("user", JSON.stringify({
+      username: "admin",
+      password: "12345"
+    }));
+  }
+
+  if(localStorage.getItem("loggedIn") === "true"){ showDashboard(); }
+
+  function login() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (savedUser.username === username && savedUser.password === password) {
+      localStorage.setItem("loggedIn", "true");
+      showDashboard();
+    } else {
+      document.getElementById("status").innerText = "Username atau password salah";
+    }
+  }
+
+  function showDashboard(){
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("dashboardPage").classList.remove("hidden");
+  }
+
+  function logout(){
+    localStorage.setItem("loggedIn", "false");
+    document.getElementById("dashboardPage").classList.add("hidden");
+    document.getElementById("loginPage").classList.remove("hidden");
+  }
+
+  // ===== Service Worker (Offline) =====
+  const swCode = `
+    const CACHE_NAME = "login-offline-cache-v1";
+    const urlsToCache = ["./"];
+    self.addEventListener("install", e => {
+      e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+    });
+    self.addEventListener("fetch", e => {
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  if ('serviceWorker' in navigator) {
+    const blob = new Blob([swCode], { type: "application/javascript" });
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl)
+      .then(() => console.log("Service Worker terdaftar"));
+  }
+
+  // ===== Manifest PWA Dinamis =====
+  const manifestData = {
+    "name": "Login Offline",
+    "short_name": "LoginApp",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#007BFF",
+    "icons": [{
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAG1BMVEXMzMyWlpb///+dnZ2xsbGjo6P5+fn4+Pj09PTX19dhB1DBAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAtElEQVRYhe3WMQ6AIAwF0JjT9P/fn1pAJkEYwbSOVV1ifEYWpCYSSm+VEkg6b6Qggq7iYYL8JH9NmJDprE0oUtdK8Fw2xkGXGML37nDWT1ugv1VrWkVuSVQJglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYM3AAYTT7SbdJWxMAAAAASUVORK5CYII=",
+      "sizes": "192x192",
+      "type": "image/png"
+    }]
+  };
+  const blobManifest = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+  const manifestURL = URL.createObjectURL(blobManifest);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestURL;
+  document.head.appendChild(link);
+</script>
+</body>
+</html>
