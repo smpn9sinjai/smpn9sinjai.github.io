@@ -2,148 +2,64 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Offline</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 300px;
-    }
-    .card input {
-      width: 90%;
-      padding: 10px;
-      margin: 5px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .card button {
-      width: 100%;
-      padding: 10px;
-      background: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 5px;
-    }
-    .card button:hover { background: #0056b3; }
-    #status { margin-top: 10px; color: red; }
-    .hidden { display: none; }
-    .dashboard h2 { color: #007BFF; }
-    .logout {
-      background: #dc3545;
-    }
-    .logout:hover {
-      background: #a71d2a;
-    }
-  </style>
+  <title>PWA Kamera Satu File</title>
 </head>
 <body>
-
-  <!-- Halaman Login -->
-  <div class="card" id="loginPage">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <p id="status"></p>
-  </div>
-
-  <!-- Dashboard -->
-  <div class="card hidden" id="dashboardPage">
-    <div class="dashboard">
-      <h2>Selamat Datang</h2>
-      <p>Anda berhasil login (bisa offline).</p>
-      <button class="logout" onclick="logout()">Logout</button>
-    </div>
-  </div>
+  <h2>📷 Kamera + Worker + Offline (1 file)</h2>
+  <button id="startCam">Buka Kamera</button>
+  <video id="video" autoplay playsinline style="width:300px; border:1px solid #ccc;"></video>
+  <pre id="output"></pre>
 
 <script>
-  // ===== Login Offline =====
-  if (!localStorage.getItem("user")) {
-    localStorage.setItem("user", JSON.stringify({
-      username: "admin",
-      password: "12345"
-    }));
-  }
-
-  if(localStorage.getItem("loggedIn") === "true"){ showDashboard(); }
-
-  function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (savedUser.username === username && savedUser.password === password) {
-      localStorage.setItem("loggedIn", "true");
-      showDashboard();
-    } else {
-      document.getElementById("status").innerText = "Username atau password salah";
-    }
-  }
-
-  function showDashboard(){
-    document.getElementById("loginPage").classList.add("hidden");
-    document.getElementById("dashboardPage").classList.remove("hidden");
-  }
-
-  function logout(){
-    localStorage.setItem("loggedIn", "false");
-    document.getElementById("dashboardPage").classList.add("hidden");
-    document.getElementById("loginPage").classList.remove("hidden");
-  }
-
-  // ===== Service Worker (Offline) =====
+// ==== Inline Service Worker ====
+if ("serviceWorker" in navigator) {
   const swCode = `
-    const CACHE_NAME = "login-offline-cache-v1";
-    const urlsToCache = ["./"];
+    const CACHE_NAME = "pwa-camera-v1";
+    const FILES_TO_CACHE = ["./"];
     self.addEventListener("install", e => {
-      e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+      e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(FILES_TO_CACHE)));
     });
     self.addEventListener("fetch", e => {
-      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+      e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
     });
   `;
-  if ('serviceWorker' in navigator) {
-    const blob = new Blob([swCode], { type: "application/javascript" });
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl)
-      .then(() => console.log("Service Worker terdaftar"));
-  }
+  const swBlob = new Blob([swCode], { type: "text/javascript" });
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).then(() => console.log("SW siap"));
+}
 
-  // ===== Manifest PWA Dinamis =====
-  const manifestData = {
-    "name": "Login Offline",
-    "short_name": "LoginApp",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#007BFF",
-    "icons": [{
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAG1BMVEXMzMyWlpb///+dnZ2xsbGjo6P5+fn4+Pj09PTX19dhB1DBAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAtElEQVRYhe3WMQ6AIAwF0JjT9P/fn1pAJkEYwbSOVV1ifEYWpCYSSm+VEkg6b6Qggq7iYYL8JH9NmJDprE0oUtdK8Fw2xkGXGML37nDWT1ugv1VrWkVuSVQJglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYJVpCVAdglWkJUB2CVaQlQHYM3AAYTT7SbdJWxMAAAAASUVORK5CYII=",
-      "sizes": "192x192",
-      "type": "image/png"
-    }]
+// ==== Inline Worker ====
+const workerCode = `
+  onmessage = e => {
+    const { size } = e.data;
+    postMessage("Frame diterima, ukuran: " + size + " byte");
   };
-  const blobManifest = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-  const manifestURL = URL.createObjectURL(blobManifest);
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = manifestURL;
-  document.head.appendChild(link);
+`;
+const workerBlob = new Blob([workerCode], { type: "text/javascript" });
+const worker = new Worker(URL.createObjectURL(workerBlob));
+worker.onmessage = e => document.getElementById("output").textContent = e.data;
+
+// ==== Kamera ====
+document.getElementById("startCam").onclick = async () => {
+  const video = document.getElementById("video");
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  video.srcObject = stream;
+
+  // kirim frame tiap 1 detik ke worker
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  setInterval(() => {
+    if (video.videoWidth > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob(blob => {
+        if (blob) worker.postMessage({ size: blob.size });
+      }, "image/jpeg");
+    }
+  }, 1000);
+};
 </script>
 </body>
 </html>
