@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Perekaman Data Wajah</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+</head>
+<body>
+  <h2>Rekam Wajah Siswa</h2>
+  <label>Nama / NIS: <input type="text" id="nama"></label>
+  <button id="start">Mulai Kamera</button>
+  <button id="capture">Rekam Wajah</button>
+
+  <br><br>
+  <video id="video" width="320" height="240" autoplay muted></video>
+
+  <pre id="output"></pre>
+
+  <script>
+    const video = document.getElementById('video');
+    const output = document.getElementById('output');
+
+    // Load model face-api.js
+    Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+      faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+      faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+    ]).then(() => console.log("Model siap"));
+
+    // Start kamera
+    document.getElementById("start").onclick = async () => {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream);
+    };
+
+    // Capture wajah & simpan ke localStorage
+    document.getElementById("capture").onclick = async () => {
+      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detections) {
+        alert("Wajah tidak terdeteksi, coba lagi!");
+        return;
+      }
+
+      const nama = document.getElementById("nama").value || "Tanpa Nama";
+      const descriptor = Array.from(detections.descriptor); // ubah Float32Array → Array
+
+      // Ambil database lama dari localStorage
+      let db = JSON.parse(localStorage.getItem("dbWajah")) || [];
+
+      // Simpan data baru
+      db.push({ nama: nama, descriptor: descriptor });
+      localStorage.setItem("dbWajah", JSON.stringify(db));
+
+      output.innerText = "Data tersimpan!\n\n" + JSON.stringify(db, null, 2);
+    };
+  </script>
+</body>
+</html>
