@@ -6,7 +6,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 </head>
 <body>
-  <h2>Rekam Wajah Siswa</h2>
+  <h2>Rekam Wajah 5 Siswa</h2>
   <label>Nama / NIS: <input type="text" id="nama"></label>
   <button id="start">Mulai Kamera</button>
   <button id="capture">Rekam Wajah</button>
@@ -25,12 +25,18 @@
       faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
       faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
       faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
-    ]).then(() => console.log("Model siap"));
+    ]).then(() => console.log("✅ Model siap"));
 
     // Start kamera
     document.getElementById("start").onclick = async () => {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => video.srcObject = stream);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        console.log("✅ Kamera aktif");
+      } catch (err) {
+        console.error("❌ Kamera gagal:", err);
+        alert("Tidak bisa membuka kamera: " + err.message);
+      }
     };
 
     // Capture wajah & simpan ke localStorage
@@ -45,7 +51,7 @@
       }
 
       const nama = document.getElementById("nama").value || "Tanpa Nama";
-      const descriptor = Array.from(detections.descriptor); // ubah Float32Array → Array
+      const descriptor = Array.from(detections.descriptor);
 
       // Ambil database lama dari localStorage
       let db = JSON.parse(localStorage.getItem("dbWajah")) || [];
