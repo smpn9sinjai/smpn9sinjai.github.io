@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Perekaman Data Wajah</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <!-- Gunakan versi UMD agar faceapi terdefinisi -->
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
   <h2>Rekam Wajah 5 Siswa</h2>
@@ -20,7 +21,7 @@
     const video = document.getElementById('video');
     const output = document.getElementById('output');
 
-    // Load model face-api.js
+    // Load model dari GitHub
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
       faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
@@ -41,7 +42,8 @@
 
     // Capture wajah & simpan ke localStorage
     document.getElementById("capture").onclick = async () => {
-      const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      const detections = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -53,10 +55,7 @@
       const nama = document.getElementById("nama").value || "Tanpa Nama";
       const descriptor = Array.from(detections.descriptor);
 
-      // Ambil database lama dari localStorage
       let db = JSON.parse(localStorage.getItem("dbWajah")) || [];
-
-      // Simpan data baru
       db.push({ nama: nama, descriptor: descriptor });
       localStorage.setItem("dbWajah", JSON.stringify(db));
 
