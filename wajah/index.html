@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Perekaman Data Wajah</title>
-  <!-- Gunakan versi UMD agar faceapi terdefinisi -->
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <!-- HARUS 66 pakai versi UMD agar faceapi global -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
   <h2>Rekam Wajah 5 Siswa</h2>
@@ -17,11 +17,12 @@
 
   <pre id="output"></pre>
 
+  <!-- Script harus dipanggil SETELAH face-api.js -->
   <script>
     const video = document.getElementById('video');
     const output = document.getElementById('output');
 
-    // Load model dari GitHub
+    // Load model face-api
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
       faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
