@@ -2,27 +2,25 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Perekaman Data Wajah</title>
-  <!-- HARUS 66 pakai versi UMD agar faceapi global -->
+  <title>Rekam new Data Wajah</title>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
-  <h2>Rekam Wajah 5 Siswa</h2>
+  <h2>Rekam Data Wajah</h2>
   <label>Nama / NIS: <input type="text" id="nama"></label>
   <button id="start">Mulai Kamera</button>
   <button id="capture">Rekam Wajah</button>
+  <button id="lihat">Lihat Data</button>
 
   <br><br>
   <video id="video" width="320" height="240" autoplay muted></video>
-
   <pre id="output"></pre>
 
-  <!-- Script harus dipanggil SETELAH face-api.js -->
   <script>
     const video = document.getElementById('video');
     const output = document.getElementById('output');
 
-    // Load model face-api
+    // Load model
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
       faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
@@ -31,36 +29,40 @@
 
     // Start kamera
     document.getElementById("start").onclick = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        console.log("✅ Kamera aktif");
-      } catch (err) {
-        console.error("❌ Kamera gagal:", err);
-        alert("Tidak bisa membuka kamera: " + err.message);
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      video.srcObject = stream;
     };
 
-    // Capture wajah & simpan ke localStorage
+    // Rekam wajah
     document.getElementById("capture").onclick = async () => {
-      const detections = await faceapi
+      const detection = await faceapi
         .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceLandmarks()
         .withFaceDescriptor();
 
-      if (!detections) {
-        alert("Wajah tidak terdeteksi, coba lagi!");
-        return;
-      }
+      if (!detection) return alert("❌ Wajah tidak terdeteksi!");
 
       const nama = document.getElementById("nama").value || "Tanpa Nama";
-      const descriptor = Array.from(detections.descriptor);
+      const descriptor = Array.from(detection.descriptor);
 
       let db = JSON.parse(localStorage.getItem("dbWajah")) || [];
-      db.push({ nama: nama, descriptor: descriptor });
-      localStorage.setItem("dbWajah", JSON.stringify(db));
 
-      output.innerText = "Data tersimpan!\n\n" + JSON.stringify(db, null, 2);
+      // Cek apakah nama sudah ada, kalau ada tambahkan descriptor
+      const idx = db.findIndex(p => p.nama === nama);
+      if (idx > -1) {
+        db[idx].descriptors.push(descriptor);
+      } else {
+        db.push({ nama: nama, descriptors: [descriptor] });
+      }
+
+      localStorage.setItem("dbWajah", JSON.stringify(db));
+      output.innerText = "✅ Data tersimpan!\n\n" + JSON.stringify(db, null, 2);
+    };
+
+    // Lihat semua data
+    document.getElementById("lihat").onclick = () => {
+      const db = JSON.parse(localStorage.getItem("dbWajah")) || [];
+      output.innerText = JSON.stringify(db, null, 2);
     };
   </script>
 </body>
