@@ -5,14 +5,14 @@
   <title>Pengenalan Wajah</title>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <style>
-    body { text-align: center; font-family: Arial, sans-serif; }
+    body { text-align: center; font-family: Arial; }
     #video { border: 2px solid #333; border-radius: 10px; }
     canvas { position: absolute; left: 50%; transform: translateX(-50%); }
   </style>
 </head>
 <body>
   <h2>Pengenalan Wajah</h2>
-  <button id="start">Mulai Kamera & Pengenalan</button><br><br>
+  <button id="start">Mulai Kamera</button>
   <div style="position: relative; display: inline-block;">
     <video id="video" width="320" height="240" autoplay muted></video>
     <canvas id="overlay" width="320" height="240"></canvas>
@@ -21,7 +21,7 @@
   <script>
     const video = document.getElementById('video');
     const overlay = document.getElementById('overlay');
-    const context = overlay.getContext('2d');
+    const ctx = overlay.getContext('2d');
     let faceMatcher;
 
     // Load model
@@ -31,58 +31,47 @@
       faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
     ]).then(() => console.log("✅ Model siap"));
 
-    // Ambil data wajah dari localStorage & buat FaceMatcher
-    function loadFaceMatcher() {
+    // Buat FaceMatcher dari localStorage
+    function loadMatcher() {
       const db = JSON.parse(localStorage.getItem("dbWajah")) || [];
-      const labeledDescriptors = db.map(item => {
-        return new faceapi.LabeledFaceDescriptors(
-          item.nama,
-          [new Float32Array(item.descriptor)]
-        );
-      });
-      return new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+      const labeled = db.map(person => new faceapi.LabeledFaceDescriptors(
+        person.nama,
+        person.descriptors.map(d => new Float32Array(d))
+      ));
+      return new faceapi.FaceMatcher(labeled, 0.8); // threshold 0.8
     }
 
-    // Mulai kamera
     document.getElementById("start").onclick = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        console.log("✅ Kamera aktif");
-        faceMatcher = loadFaceMatcher();
-        startRecognition();
-      } catch (err) {
-        alert("Tidak bisa membuka kamera: " + err.message);
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+      video.srcObject = stream;
+      faceMatcher = loadMatcher();
+      detectFaces();
     };
 
-    // Fungsi pengenalan wajah real-time
-    async function startRecognition() {
+    async function detectFaces() {
       const options = new faceapi.TinyFaceDetectorOptions();
-      video.addEventListener("play", () => {
+      video.addEventListener('play', () => {
         const loop = async () => {
-          context.clearRect(0, 0, overlay.width, overlay.height);
-          const detections = await faceapi.detectAllFaces(video, options)
+          ctx.clearRect(0, 0, overlay.width, overlay.height);
+          const results = await faceapi
+            .detectAllFaces(video, options)
             .withFaceLandmarks()
             .withFaceDescriptors();
 
-          if (detections.length > 0) {
-            const resized = faceapi.resizeResults(detections, {
-              width: overlay.width,
-              height: overlay.height
-            });
+          const resized = faceapi.resizeResults(results, {
+            width: overlay.width,
+            height: overlay.height
+          });
 
-            resized.forEach(det => {
-              const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-              const box = det.detection.box;
-              context.strokeStyle = "#00FF00";
-              context.lineWidth = 2;
-              context.strokeRect(box.x, box.y, box.width, box.height);
-              context.fillStyle = "#00FF00";
-              context.fillText(bestMatch.toString(), box.x, box.y - 5);
-            });
-          }
-
+          resized.forEach(d => {
+            const match = faceMatcher.findBestMatch(d.descriptor);
+            const box = d.detection.box;
+            ctx.strokeStyle = "#00FF00";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            ctx.fillStyle = "#00FF00";
+            ctx.fillText(match.toString(), box.x, box.y - 5);
+          });
           requestAnimationFrame(loop);
         };
         loop();
