@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unduh Aplikasi Ratus Kasih</title>
+  <meta name="description" content="Halaman resmi untuk mengunduh APK aplikasi Ratus Kasih." />
+  <meta name="theme-color" content="#4f46e5" />
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.12);
+      --txt: #e6e8ee;
+      --muted: #a9b0c0;
+      --pri: #6366f1;
+      --pri-2:#8b5cf6;
+      --ok:#10b981;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--txt);
+      background:
+        radial-gradient(60rem 60rem at 10% -10%, rgba(79,70,229,.25), transparent 60%),
+        radial-gradient(60rem 60rem at 100% 10%, rgba(139,92,246,.25), transparent 60%),
+        var(--bg);
+      line-height:1.6;
+    }
+    .container{max-width:1080px;margin:0 auto;padding:24px}
+    .navbar{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:16px 20px;border:1px solid var(--border);background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));backdrop-filter: blur(10px);border-radius:18px;box-shadow:var(--shadow)}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700;letter-spacing:.2px}
+    .brand .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg, var(--pri), var(--pri-2));display:grid;place-items:center;color:white;font-weight:900}
+    .nav-right{display:flex;gap:10px;align-items:center}
+    .btn{appearance:none;border:none;background:var(--pri);color:white;padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer;transition:.2s transform ease, .2s opacity ease;text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.softer{background:transparent;border:1px solid var(--border);color:var(--txt)}
+
+    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;margin-top:28px}
+    @media (max-width:900px){.hero{grid-template-columns:1fr}}
+
+    .card{border:1px solid var(--border);background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));backdrop-filter: blur(12px);border-radius:24px;box-shadow:var(--shadow)}
+    .hero .left{padding:36px}
+    .hero h1{font-size:clamp(28px, 3.6vw, 48px);line-height:1.15;margin:0 0 10px}
+    .hero p{color:var(--muted);margin:0 0 24px}
+
+    .badges{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 18px}
+    .badge{font-size:12px;color:#dbe1ff;background:rgba(99,102,241,.12);border:1px dashed rgba(99,102,241,.4);padding:6px 10px;border-radius:999px}
+
+    .preview{padding:0;overflow:hidden;position:relative}
+    .phone{aspect-ratio:9/19;border-radius:28px;border:1px solid var(--border);margin:22px;background:linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));box-shadow:inset 0 0 0 10px rgba(0,0,0,.18), 0 10px 45px rgba(0,0,0,.45)}
+    .phone .screen{height:100%;width:100%;display:grid;place-items:center;color:#c7cbdb;font-weight:700;font-size:18px}
+
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+    @media (max-width:900px){.features{grid-template-columns:1fr 1fr}}
+    @media (max-width:640px){.features{grid-template-columns:1fr}}
+    .feature{padding:18px;border-radius:18px;border:1px solid var(--border);background:rgba(255,255,255,.04)}
+    .feature h3{margin:0 0 6px;font-size:16px}
+    .feature p{margin:0;color:var(--muted);font-size:14px}
+
+    .download{margin-top:28px;display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    @media (max-width:900px){.download{grid-template-columns:1fr}}
+    .download .box{padding:22px}
+    .muted{color:var(--muted)}
+    .kicker{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:#c8cff7;opacity:.9}
+    .inline-input{display:flex;gap:10px;align-items:center;margin-top:10px}
+    .inline-input input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt)}
+    .fineprint{font-size:12px;color:var(--muted)}
+    .divider{height:1px;background:var(--border);margin:18px 0}
+    footer{opacity:.9;margin:38px 0 10px;text-align:center;font-size:13px;color:var(--muted)}
+    code.inline{background:rgba(255,255,255,.08);padding:2px 6px;border-radius:6px;border:1px solid var(--border)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="navbar card">
+      <div class="brand">
+        <div class="" aria-hidden="true"><img src="https://app.smpn9sinjai.sch.id/smp.jpg" style="width:40px;border-radius:50px" /></div>
+        <div>
+          <div style="font-size:15px">RATU KASIH Ver. 0.1</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:-2px">Aplikasi Resmi</div>
+        </div>
+      </div>
+      <div class="nav-right">
+        
+       
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div class="left card">
+        <div class="badges">
+          <span class="badge">Versi Android (APK)</span>
+          <span class="badge">Aman & Ringan</span>
+          <span class="badge">Tanpa Iklan Mengganggu</span>
+        </div>
+        <h1>Semua jadi lebih mudah dengan <span style="background:linear-gradient(135deg,var(--pri),var(--pri-2));-webkit-background-clip:text;background-clip:text;color:transparent"><br>RATU KASIH</span></h1>
+        <p>Halaman ini adalah tempat resmi untuk mengunduh file APK Ratus Kasih. Klik tombol unduh untuk memulai proses download  </p>
+        <div class="inline-input">
+          
+            <a class="btn" href="#unduh" id="ctaTop">⬇️  Unduh APK</a>
+        </div>
+         
+      </div>
+      <div class="preview card" aria-hidden="true">
+        <div class="phone">
+          <div class="screen"> 
+		  <img src="tampilan.jpg"  style="width:90%;border-radius:7px" />
+		  </div>
+        </div>
+      </div>
+    </section>
+
+    
+
+    
+
+    <!-- Iframe pemicu download (disembunyikan) -->
+    <iframe id="downloadFrame" title="pemicu-unduhan" style="width:0;height:0;border:0;visibility:hidden" loading="lazy" referrerpolicy="no-referrer"></iframe>
+
+    <footer>
+      © <span id="y"></span>  UPTD SMPN 9 Sinjai
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      const APK_URL = 'RATU_KASIH.apk';
+      const btn = document.getElementById('btnDownload');
+      const frame = document.getElementById('downloadFrame');
+      const copyBtn = document.getElementById('copyBtn');
+      const apkUrl = document.getElementById('apkUrl');
+      const y = document.getElementById('y');
+      y.textContent = new Date().getFullYear();
+
+      function triggerDownload(){
+        try{
+          frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+        }catch(e){
+          console.warn('Gagal set iframe:', e);
+          window.location.href = APK_URL; // fallback
+        }
+      }
+
+      btn?.addEventListener('click', triggerDownload);
+      document.getElementById('ctaTop')?.addEventListener('click', function(){
+        setTimeout(triggerDownload, 350);
+      });
+
+      copyBtn?.addEventListener('click', async function(){
+        try{
+          await navigator.clipboard.writeText(apkUrl.value);
+          copyBtn.textContent = 'Tersalin';
+          setTimeout(()=> copyBtn.textContent = 'Salin', 1200);
+        }catch(err){
+          apkUrl.select();
+          document.execCommand('copy');
+          copyBtn.textContent = 'Tersalin';
+          setTimeout(()=> copyBtn.textContent = 'Salin', 1200);
+        }
+      });
+
+      // Opsional: otomatis mulai jika URL mengandung ?auto=1
+      const params = new URLSearchParams(location.search);
+      if(params.get('auto') === '1'){
+        setTimeout(triggerDownload, 600);
+      }
+    })();
+  </script>
+</body>
+</html>
