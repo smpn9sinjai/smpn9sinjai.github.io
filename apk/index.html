@@ -132,8 +132,8 @@
   <script>
 	   
     (function(){
-      const APK_URL = 'RATU_KASIH.apk';
-		alert(window.location.href+APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now())
+      const APK_URL = 'https://smpn9sinjai.sch.id/RATU_KASIH.apk';
+		 
       const btn = document.getElementById('btnDownload');
       const frame = document.getElementById('downloadFrame');
       const copyBtn = document.getElementById('copyBtn');
@@ -143,10 +143,10 @@
        
       function triggerDownload(){
         try{
-          frame.src = window.location.href+APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+          frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         }catch(e){
           console.warn('Gagal set iframe:', e);    
-          window.location.href =window.location.href+APK_URL; // fallback
+          window.location.href =APK_URL; // fallback
         }
       }
 
