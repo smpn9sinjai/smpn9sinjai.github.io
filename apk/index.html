@@ -147,7 +147,7 @@
         try{
           frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         }catch(e){
-          console.warn('Gagal set iframe:', e);
+          console.warn('Gagal set iframe:', e);   alert(APK_URL)
           window.location.href = APK_URL; // fallback
         }
       }
