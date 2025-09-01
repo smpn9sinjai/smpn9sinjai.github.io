@@ -130,16 +130,17 @@
   </div>
 
   <script>
+	   
     (function(){
       const APK_URL = 'RATU_KASIH.apk';
-		alert(APK_URL)
+		alert(window.location.href+APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now())
       const btn = document.getElementById('btnDownload');
       const frame = document.getElementById('downloadFrame');
       const copyBtn = document.getElementById('copyBtn');
       const apkUrl = document.getElementById('apkUrl');
       const y = document.getElementById('y');
       y.textContent = new Date().getFullYear();
-
+       
       function triggerDownload(){
         try{
           frame.src = window.location.href+APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
