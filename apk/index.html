@@ -108,7 +108,7 @@
         <p>Halaman ini adalah tempat resmi untuk mengunduh file APK Ratus Kasih. Klik tombol unduh untuk memulai proses download  </p>
         <div class="inline-input">
           
-            <a class="btn" href="#unduh" id="ctaTop">⬇️  Unduh APK</a>
+            <a class="btn" href="" id="ctaTop">⬇️  Unduh APK</a>
         </div>
          
       </div>
@@ -148,8 +148,8 @@
         try{
           frame.src = APK_URL + (APK_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         }catch(e){
-          console.warn('Gagal set iframe:', e);   alert(APK_URL)
-          window.location.href = APK_URL; // fallback
+          console.warn('Gagal set iframe:', e);    
+          window.location.href =window.location.href+APK_URL; // fallback
         }
       }
 
