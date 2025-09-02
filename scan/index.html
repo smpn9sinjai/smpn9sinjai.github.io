@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR & Barcode Scanner</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background: #f9f9f9; }
+    h3 { color: #333; }
+    #reader { width: 90%; max-width: 400px; margin: auto; }
+    #result { margin-top: 20px; font-size: 18px; font-weight: bold; color: #222; }
+    button { padding: 10px 20px; margin-top: 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h3>QR & Barcode Scanner</h3>
+  <div id="reader"></div>
+  <div id="result">Hasil scan akan muncul di sini</div>
+  <button onclick="stopScan()">Stop Scan</button>
+
+  <script>
+    let html5QrCode;
+    let isScanning = false;
+
+    function onScanSuccess(decodedText) {
+      document.getElementById('result').innerText = "Hasil: " + decodedText;
+      // Untuk hentikan scan otomatis, aktifkan baris berikut:
+      // stopScan();
+    }
+
+    function startScanner() {
+      html5QrCode = new Html5Qrcode("reader");
+      Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+          isScanning = true;
+          html5QrCode.start(
+            cameras[0].id,
+            {
+              fps: 10,
+              qrbox: 250,
+              formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13
+              ]
+            },
+            onScanSuccess
+          ).catch(err => console.error(err));
+        }
+      }).catch(err => console.error(err));
+    }
+
+    function stopScan() {
+      if (isScanning && html5QrCode) {
+        html5QrCode.stop().then(() => {
+          document.getElementById('result').innerText = "Scan dihentikan.";
+          isScanning = false;
+        }).catch(err => console.error(err));
+      }
+    }
+
+    startScanner();
+  </script>
+</body>
+</html>
