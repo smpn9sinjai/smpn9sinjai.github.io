@@ -37,13 +37,13 @@
       osc.stop(now + duration / 1000);
       osc.onended = () => ctx.close();
     }
-var mm=document.getElementById("result")
+ 
     function onScanSuccess(decodedText, decodedResult) {
       if (!canScan) return; // kalau lagi jeda, abaikan
       canScan = false;      // kunci agar tidak scan lagi
 
       beep({freq: 1000, duration: 100, volume: 0.8, type: 'square'});
-      mm.innerText += `Hasil: ${decodedText}<br>`;
+     document.getElementById("result").innerHTML += `Hasil: ${decodedText}<br>`;
       console.log(`Scan success: ${decodedText}`, decodedResult);
 
       // Atur jeda 3 detik
