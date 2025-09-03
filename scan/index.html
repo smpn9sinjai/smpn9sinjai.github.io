@@ -18,10 +18,9 @@
   <div id="result">Hasil scan akan muncul di sini</div>
 
   <script>
-    let html5QrCode;
-    let currentCameraId;
+    let canScan = true; // flag untuk mengatur jeda scan
 
-    function beep({freq=700, duration=300, volume=0.2, type='square'} = {}) {
+    function beep({freq=700, duration=300, volume=0.5, type='square'} = {}) {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const gain = ctx.createGain();
       const osc = ctx.createOscillator();
@@ -40,31 +39,25 @@
     }
 
     function onScanSuccess(decodedText, decodedResult) {
-      beep({freq: 1000, duration: 100, volume: 0.5, type: 'square'});
+      if (!canScan) return; // kalau lagi jeda, abaikan
+      canScan = false;      // kunci agar tidak scan lagi
+
+      beep({freq: 1000, duration: 100, volume: 0.8, type: 'square'});
       document.getElementById("result").innerText = `Hasil: ${decodedText}`;
       console.log(`Scan success: ${decodedText}`, decodedResult);
 
-      // Stop scan sementara
-      html5QrCode.stop().then(() => {
-        console.log("Scan dihentikan sementara...");
-        // Tunggu 3 detik baru mulai lagi
-        setTimeout(() => {
-          html5QrCode.start(
-            currentCameraId,
-            { fps: 10, qrbox: 250 },
-            onScanSuccess
-          ).catch(err => console.error("Gagal memulai ulang kamera", err));
-        }, 3000);
-      });
+      // Atur jeda 3 detik
+      setTimeout(() => {
+        canScan = true; // buka kunci supaya bisa scan lagi
+      }, 3000);
     }
 
-    html5QrCode = new Html5Qrcode("reader");
+    const html5QrCode = new Html5Qrcode("reader");
 
     Html5Qrcode.getCameras().then(cameras => {
       if (cameras && cameras.length) {
-        currentCameraId = cameras[cameras.length - 1].id;
         html5QrCode.start(
-          currentCameraId,
+          cameras[cameras.length - 1].id,
           { fps: 10, qrbox: 250 },
           onScanSuccess
         ).catch(err => console.error("Gagal memulai kamera", err));
