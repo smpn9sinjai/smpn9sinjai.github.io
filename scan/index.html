@@ -43,7 +43,7 @@
       canScan = false;      // kunci agar tidak scan lagi
 
       beep({freq: 1000, duration: 100, volume: 0.8, type: 'square'});
-     document.getElementById("result").innerHTML += `Hasil: ${decodedText}<br>`;
+     document.getElementById("result").innerHTML += `<br>${decodedText}`;
       console.log(`Scan success: ${decodedText}`, decodedResult);
 
       // Atur jeda 3 detik
