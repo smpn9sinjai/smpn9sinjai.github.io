@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Export Tabel ke Excel</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+</head>
+<body>
+
+<h1>Data Siswa</h1>
+<button onclick="downloadExcel()">Download Excel</button>
+
+<table id="dataTable" border="1">
+<thead>
+<tr>
+<th>NIS</th>
+<th>Nama</th>
+<th>Kelas</th>
+<th>Nilai Akhir</th>
+<th>Keterangan</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1001</td><td>Abdul Rahman</td><td>9A</td><td>88.5</td><td>Lulus</td></tr>
+<tr><td>1002</td><td>Siti Aminah</td><td>9B</td><td>91.0</td><td>Lulus</td></tr>
+<tr><td>1003</td><td>Budi Santoso</td><td>9A</td><td>76.0</td><td>Remedial</td></tr>
+<tr><td>1004</td><td>Dewi Lestari</td><td>9C</td><td>84.0</td><td>Lulus</td></tr>
+<tr><td>1005</td><td>Ahmad Fauzi</td><td>9B</td><td>69.5</td><td>Remedial</td></tr>
+</tbody>
+</table>
+
+<script>
+async function downloadExcel(){
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Data Siswa');
+
+    // Judul laporan
+    sheet.mergeCells('A1:E1');
+    const titleCell = sheet.getCell('A1');
+    titleCell.value = 'LAPORAN NILAI SISWA SMPN 9 SINJAI';
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Tanggal cetak
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric'
+    });
+    sheet.mergeCells('A2:E2');
+    const dateCell = sheet.getCell('A2');
+    dateCell.value = `Tanggal Cetak: ${formattedDate}`;
+    dateCell.alignment = { horizontal: 'right', vertical: 'middle' };
+    dateCell.font = { italic: true, size: 11 };
+
+    // Atur lebar kolom manual
+    sheet.columns = [
+        { width: 12 }, // NIS
+        { width: 25 }, // Nama
+        { width: 10 }, // Kelas
+        { width: 12 }, // Nilai Akhir
+        { width: 15 }  // Keterangan
+    ];
+
+    // Ambil data tabel HTML
+    const table = document.getElementById("dataTable");
+    const rows = table.querySelectorAll("tr");
+    rows.forEach((row, index) => {
+        const cells = row.querySelectorAll("th,td");
+        const dataRow = [];
+        cells.forEach(cell => dataRow.push(cell.innerText));
+        sheet.addRow(dataRow);
+    });
+
+    // Styling border + header
+    sheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+            cell.border = {
+                top: {style:'thin'},
+                left: {style:'thin'},
+                bottom: {style:'thin'},
+                right: {style:'thin'}
+            };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+            // Header styling
+            if(rowNumber === 3){
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F81BD' } };
+            }
+        });
+    });
+
+    // Tambahkan tanda tangan di bawah tabel
+    const lastRow = sheet.lastRow.number + 3;
+    sheet.mergeCells(`D${lastRow}:E${lastRow}`);
+    sheet.getCell(`D${lastRow}`).value = "Mengetahui,";
+    sheet.getCell(`D${lastRow}`).alignment = { horizontal: 'center' };
+
+    sheet.mergeCells(`D${lastRow+1}:E${lastRow+1}`);
+    sheet.getCell(`D${lastRow+1}`).value = "Kepala Sekolah";
+    sheet.getCell(`D${lastRow+1}`).alignment = { horizontal: 'center' };
+
+    sheet.mergeCells(`D${lastRow+4}:E${lastRow+4}`);
+    sheet.getCell(`D${lastRow+4}`).value = "Drs. H. Nama Kepala Sekolah";
+    sheet.getCell(`D${lastRow+4}`).font = { bold: true };
+    sheet.getCell(`D${lastRow+4}`).alignment = { horizontal: 'center' };
+
+    // Freeze header (baris 3)
+    sheet.views = [{ state: 'frozen', ySplit: 3 }];
+
+    // Download file
+alert(1) 
+const buffer = await workbook.xlsx.writeBuffer();
+const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+Android.saveExcel(base64, "Laporan_Nilai_Siswa.xlsx");
+alert("File berhasil disimpan di folder Downloads");
+
+    
+}
+</script>
+
+</body>
+</html>
