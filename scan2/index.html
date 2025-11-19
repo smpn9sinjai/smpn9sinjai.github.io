@@ -1,0 +1,138 @@
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR & Barcode Scanner</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; text-align: center; margin: 0; padding: 0; }
+    h1 { background: #4CAF50; color: white; padding: 10px; margin: 0; }
+    #reader { width: 100%; max-width: 400px; margin: 20px auto; }
+    #result { font-size: 18px; font-weight: bold; margin-top: 15px; color: #333; }
+	#log1{font-size: 25px; font-weight: bold;}
+	#log2{font-size: 35px; font-weight: bold}
+  </style>
+</head>
+<body>
+  <h1>QR & Barcode Scanner</h1>
+  <div id="reader"></div>
+  <div id="result"></div>
+ <div id="status" style="position:fixed; bottom:2px; left:2px; margin-bottom:10px; font-weight:bold;">
+    Connecting...
+</div>
+
+
+<input id="msg" placeholder="ketik pesan...">
+<button onclick="sendMsg()">Kirim</button>
+
+<pre id="log"></pre>
+  <script>
+    let canScan = true; // flag untuk mengatur jeda scan
+
+    function beep({freq=700, duration=300, volume=0.5, type='square'} = {}) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const gain = ctx.createGain();
+      const osc = ctx.createOscillator();
+
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      const now = ctx.currentTime;
+      osc.start(now);
+      osc.stop(now + duration / 1000);
+      osc.onended = () => ctx.close();
+    }
+ 
+    function onScanSuccess(decodedText, decodedResult) {
+      if (!canScan) return; // kalau lagi jeda, abaikan
+      canScan = false;      // kunci agar tidak scan lagi
+
+      beep({freq: 1000, duration: 100, volume: 0.8, type: 'square'});
+     document.getElementById("result").innerHTML = `${decodedText}`;
+	 document.getElementById("msg").value=`${decodedText}`;
+	 sendMsg();
+      console.log(`Scan success: ${decodedText}`, decodedResult);
+
+      // Atur jeda 3 detik
+      setTimeout(() => {
+        canScan = true; // buka kunci supaya bisa scan lagi
+      }, 1000);
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        html5QrCode.start(
+          cameras[cameras.length - 1].id,
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        ).catch(err => console.error("Gagal memulai kamera", err));
+      } else {
+        alert("Tidak ada kamera yang ditemukan");
+      }
+    }).catch(err => console.error("Gagal mendapatkan kamera", err));
+	
+	let ws;
+let reconnectDelay = 3000; // 3 detik
+let shouldReconnect = true;
+
+function connectWebSocket() {
+   // ws = new WebSocket("ws://10.205.134.78:8080/ws");
+   ws = new WebSocket("wss://randee-streetless-gnashingly.ngrok-free.dev/ws")
+
+    document.getElementById("status").textContent = "Connecting...";
+
+    ws.onopen = () => {
+        document.getElementById("status").textContent = "🟢 Connected";
+    };
+
+    ws.onmessage = (e) => {
+	    let gs=JSON.parse(e.data)
+		 if(gs.isi != 'x'){
+        document.getElementById("log").innerHTML ="<span id='log1'>Selamat datang</span><br><span id='log2'>"+gs.isi+"</span><br><span id='log1'>Silahkan Masuk</span>" ;
+		}
+		else {document.getElementById("log").innerHTML ="<span id='log2'>Maff Ditolak</span>"}
+    };
+
+    ws.onclose = () => {
+        document.getElementById("status").textContent = "🔴 Disconnected";
+        if (shouldReconnect) {
+            setTimeout(() => {
+                console.log("Reconnecting WebSocket...");
+                connectWebSocket();
+            }, reconnectDelay);
+        }
+    };
+
+    ws.onerror = () => {
+        document.getElementById("status").textContent = "⚠️ Error";
+        ws.close(); // biar masuk onclose dan reconnect
+    };
+}
+
+connectWebSocket(); // mulai saat halaman dibuka
+
+function sendMsg() {
+    if (ws.readyState === WebSocket.OPEN) {
+	   let sd=document.getElementById("msg").value
+	   
+	  
+	   
+	   let tgl = new Date();
+	    let stamp = `${tgl.toISOString().slice(0, 19)}`;
+		 let gd=JSON.stringify({"kode":5, "isi":sd, "tgl":stamp})
+        ws.send(gd);
+    } else {
+        alert("WebSocket belum terhubung!");
+    }
+}
+	
+	
+  </script>
+</body>
+</html>
