@@ -52,7 +52,7 @@
       canScan = false;      // kunci agar tidak scan lagi
 
       beep({freq: 1000, duration: 100, volume: 0.8, type: 'square'});
-     document.getElementById("result").innerHTML = `${decodedText}`;
+    // document.getElementById("result").innerHTML = `${decodedText}`;
 	 document.getElementById("msg").value=`${decodedText}`;
 	 sendMsg();
       console.log(`Scan success: ${decodedText}`, decodedResult);
@@ -93,10 +93,13 @@ function connectWebSocket() {
 
     ws.onmessage = (e) => {
 	    let gs=JSON.parse(e.data)
-		 if(gs.isi != 'x'){
+		 if(gs.isi != 'x' && gs.isi != document.getElementById("msg").value ){
         document.getElementById("log").innerHTML ="<span id='log1'>Selamat datang</span><br><span id='log2'>"+gs.isi+"</span><br><span id='log1'>Silahkan Masuk</span>" ;
 		}
-		else {document.getElementById("log").innerHTML ="<span id='log2'>Maff Ditolak</span>"}
+		else {
+		if( gs.isi != document.getElementById("msg").value )
+		document.getElementById("log").innerHTML ="<span id='log2'>Maff Ditolak</span>"
+		}
     };
 
     ws.onclose = () => {
