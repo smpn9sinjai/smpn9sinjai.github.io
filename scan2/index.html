@@ -26,7 +26,16 @@
 <button onclick="sendMsg()">Kirim</button>
 
 <pre id="log"></pre>
+  <audio id='klik'>
+  <source src="masuk.mp3" type="audio/mpeg">
+</audio>
+  <audio id='klik2'>
+  <source src="gagal.mp3" type="audio/mpeg">
+</audio>
+	
   <script>
+	  let play1=document.getElementById("klik");
+	   let play2=document.getElementById("klik2")
     let canScan = true; // flag untuk mengatur jeda scan
 
     function beep({freq=700, duration=300, volume=0.5, type='square'} = {}) {
@@ -95,10 +104,12 @@ function connectWebSocket() {
 	    let gs=JSON.parse(e.data)
 		 if(gs.kode==1){
 		 if(gs.isi != 'x' && gs.isi != document.getElementById("msg").value ){
+			 play1.play();
         document.getElementById("log").innerHTML ="<span id='log1'>Selamat datang</span><br><span id='log2'>"+gs.isi+"</span><br><span id='log1'>Silahkan Masuk</span>" ;
 		}
 		else {
 		if( gs.isi != document.getElementById("msg").value )
+			 play2.play();
 		document.getElementById("log").innerHTML ="<span id='log2'>Maff Ditolak</span>"
 		}
     }
