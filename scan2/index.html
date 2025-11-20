@@ -93,6 +93,7 @@ function connectWebSocket() {
 
     ws.onmessage = (e) => {
 	    let gs=JSON.parse(e.data)
+		 if(gs.kode==1){
 		 if(gs.isi != 'x' && gs.isi != document.getElementById("msg").value ){
         document.getElementById("log").innerHTML ="<span id='log1'>Selamat datang</span><br><span id='log2'>"+gs.isi+"</span><br><span id='log1'>Silahkan Masuk</span>" ;
 		}
@@ -100,7 +101,8 @@ function connectWebSocket() {
 		if( gs.isi != document.getElementById("msg").value )
 		document.getElementById("log").innerHTML ="<span id='log2'>Maff Ditolak</span>"
 		}
-    };
+    }
+	}
 
     ws.onclose = () => {
         document.getElementById("status").textContent = "🔴 Disconnected";
