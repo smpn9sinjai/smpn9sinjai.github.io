@@ -1,3 +1,4 @@
+
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -11,6 +12,9 @@
     #result { font-size: 18px; font-weight: bold; margin-top: 15px; color: #333; }
 	#log1{font-size: 25px; font-weight: bold;}
 	#log2{font-size: 35px; font-weight: bold}
+	input{fint-size:18px;padding:5px;border-radius:5px}
+	button{fint-size:18px;padding:5px;background:green;color:white;border-radius:5px;border:none}
+	button:hover{background:orange;color:white;border-radius:5px;border:none}
   </style>
 </head>
 <body>
@@ -103,6 +107,7 @@ function connectWebSocket() {
     ws.onmessage = (e) => {
 	    let gs=JSON.parse(e.data)
 		 if(gs.kode==1){
+		 setTimeout(function(){document.getElementById("log").innerHTML=""},4000)
 		 if(gs.isi != 'x' && gs.isi != document.getElementById("msg").value ){
 			 play1.play();
         document.getElementById("log").innerHTML ="<span id='log1'>Selamat datang</span><br><span id='log2'>"+gs.isi+"</span><br><span id='log1'>Silahkan Masuk</span>" ;
