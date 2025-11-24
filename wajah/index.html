@@ -1,61 +1,78 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<title>Face Recognition Camera</title>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-<style>
-  body { text-align:center; font-family:Arial; }
-  #video { border:3px solid blue; border-radius:12px; margin-top:15px; }
-  #overlay { position:absolute; left:0; top:0; }
-  #log { margin-top:10px; font-size:14px; height:180px; overflow:auto; border:1px solid #ccc; padding:5px; background:#f9f9f9; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Face Recognition - Pengenalan Nama</title>
+
+  <style>
+    body { font-family: Arial; background:#f1f4f8; padding:20px; display:flex; gap:20px; }
+    video, canvas { border-radius:10px; }
+    .card { background:white; padding:16px; border-radius:12px; width:760px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    button{ padding:8px 14px; border:0; border-radius:8px; cursor:pointer; background:#2563eb; color:white }
+    button.stop{ background:#6b7280 }
+    #log { height:330px; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius:8px; font-size:13px }
+  </style>
 </head>
+
 <body>
+<div class="card">
+  <h2>Face Recognition dengan Nama</h2>
+  <p>Gunakan Webcam + face-api.js <b>untuk mengenali nama orang</b>.</p>
 
-<h2>Face Recognition Camera</h2>
-<video id="video" width="640" height="480" autoplay muted></video>
-<canvas id="overlay"></canvas>
-<div id="log"></div>
+  <div style="position:relative; display:inline-block;">
+    <video id="video" autoplay muted playsinline width="720" height="560"></video>
+    <canvas id="canvas" width="720" height="560" style="position:absolute; left:0; top:0;"></canvas>
+  </div><br><br>
 
+  <button id="startBtn">Mulai Kamera</button>
+  <button id="stopBtn" class="stop">Hentikan Kamera</button>
+
+  <p style="font-size:13px;color:#666">Jika file HTML dibuka langsung, browser mungkin menolak kamera. Jalankan via server: VSCode Live Server / XAMPP / python -m http.server</p>
+</div>
+
+<div class="card" style="width:300px;">
+  <h3>Log</h3>
+  <pre id="log">Menunggu...</pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-const MODEL_URL = "models";
-const video = document.getElementById("video");
-const overlay = document.getElementById("overlay");
-const logBox = document.getElementById("log");
+  const MODEL_URL = "https://smpn9sinjai.sch.id/wajah/models/";
+  const LABELS = ["budi"]; // Tambahkan nama lain jika folder bertambah
 
-function log(msg) {
-  const t = new Date().toLocaleTimeString();
-  logBox.innerHTML = `[${t}] ${msg}<br>` + logBox.innerHTML;
-}
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const logEl = document.getElementById("log");
 
-// ---------------- LOAD MODELS (SSD) ----------------
-async function loadModels() {
-  log("Memuat model...");
-  await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-  log("Model selesai dimuat ✔");
-  await loadLabeledFaces();
-  startVideo();
-}
+  let faceMatcher = null;
+  let interval = null;
+  let stream = null;
 
-let faceMatcher;
+  function log(x) {
+    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${x}\n` + logEl.textContent;
+  }
 
-// ---------------- LOAD LABELED FACES ----------------
-async function loadLabeledFaces() {
-  log("Memuat data wajah & nama...");
+  // 🔥 GUNAKAN SSDMobilenetv1
+  async function loadModels() {
+    log("Memuat model...");
+    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+    log("Model selesai dimuat ✔");
+  }
 
-  const labels = ["budi"]; // ← tambah jika ada wajah lain
-  const labeledDescriptors = [];
+  async function loadLabeledFaces() {
+    log("Memuat data wajah & nama...");
+    const labeledDescriptors = [];
 
-  for (const label of labels) {
-    const descriptors = [];
-    for (let i = 1; i <= 3; i++) {
-      const imgUrl = `labeled/${label}/${i}.jpg`;
-      log("Ambil gambar: " + imgUrl);
+    for (const label of LABELS) {
+      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
+      log("Ambil gambar: " + imgURL);
 
-      const img = await faceapi.fetchImage(imgUrl);
+      const img = await faceapi.fetchImage(imgURL);
       const det = await faceapi
         .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
         .withFaceLandmarks()
@@ -65,55 +82,54 @@ async function loadLabeledFaces() {
         log(`⚠ Wajah ${label} tidak terdeteksi — cek gambar`);
         continue;
       }
-      descriptors.push(det.descriptor);
+
+      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
+      log(`✔ Data wajah tersimpan: ${label}`);
     }
-    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, descriptors));
+
+    return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
   }
-  faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
-  log("Data wajah selesai dimuat ✔");
-}
 
-// ---------------- CAMERA ----------------
-async function startVideo() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  video.srcObject = stream;
-  log("Kamera aktif");
-  recognize();
-}
+  async function startCamera() {
+    await loadModels();
+    faceMatcher = await loadLabeledFaces();
 
-// ---------------- RECOGNITION LOOP ----------------
-async function recognize() {
-  overlay.width = video.width;
-  overlay.height = video.height;
-  const ctx = overlay.getContext("2d");
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    await video.play();
+    log("Kamera aktif ✔");
 
-  setInterval(async () => {
-    const detections = await faceapi
-      .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
-      .withFaceLandmarks()
-      .withFaceDescriptors();
+    interval = setInterval(async () => {
+      const result = await faceapi
+        .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    detections.forEach(det => {
-      const box = det.detection.box;
-      const best = faceMatcher.findBestMatch(det.descriptor);
+      result.forEach(res => {
+        const box = res.detection.box;
+        const match = faceMatcher.findBestMatch(res.descriptor).toString();
 
-      ctx.beginPath();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = best.label === "unknown" ? "red" : "lime";
-      ctx.rect(box.x, box.y, box.width, box.height);
-      ctx.stroke();
+        ctx.strokeStyle = "lime";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
 
-      ctx.fillStyle = "black";
-      ctx.font = "20px Arial";
-      ctx.fillText(best.toString(), box.x, box.y - 10);
-    });
-  }, 300);
-}
+        ctx.fillStyle = "yellow";
+        ctx.font = "20px Arial";
+        ctx.fillText(match, box.x, box.y - 8);
+      });
+    }, 250);
+  }
 
-// START
-loadModels();
+  function stopCamera() {
+    if (interval) clearInterval(interval);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    log("Kamera berhenti.");
+  }
+
+  document.getElementById("startBtn").onclick = startCamera;
+  document.getElementById("stopBtn").onclick = stopCamera;
 </script>
 </body>
 </html>
