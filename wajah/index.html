@@ -1,75 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Face Recognition - SSD Fast</title>
+<title>Face Recognition Camera</title>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
 <style>
-  body { text-align:center; font-family:Arial; background:#f4f7ff; }
-  #video { border:4px solid #4a6cf7; border-radius:12px; margin-top:20px; }
-  #status { margin-top:15px; font-weight:bold; }
+  body { text-align:center; font-family:Arial; }
+  #video { border:3px solid blue; border-radius:12px; margin-top:15px; }
+  #overlay { position:absolute; left:0; top:0; }
+  #log { margin-top:10px; font-size:14px; height:180px; overflow:auto; border:1px solid #ccc; padding:5px; background:#f9f9f9; }
 </style>
 </head>
 <body>
 
-<h2>🔍 Face Recognition (SsdMobilenetv1 Optimized)</h2>
+<h2>Face Recognition Camera</h2>
 <video id="video" width="640" height="480" autoplay muted></video>
 <canvas id="overlay"></canvas>
-<div id="status">Loading models...</div>
+<div id="log"></div>
 
 <script>
+const MODEL_URL = "models";
 const video = document.getElementById("video");
 const overlay = document.getElementById("overlay");
-const status = document.getElementById("status");
-let labeledDescriptors = [];
+const logBox = document.getElementById("log");
+
+function log(msg) {
+  const t = new Date().toLocaleTimeString();
+  logBox.innerHTML = `[${t}] ${msg}<br>` + logBox.innerHTML;
+}
+
+// ---------------- LOAD MODELS (SSD) ----------------
+async function loadModels() {
+  log("Memuat model...");
+  await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+  log("Model selesai dimuat ✔");
+  await loadLabeledFaces();
+  startVideo();
+}
+
 let faceMatcher;
 
-// ---------------- Load Models ----------------
-async function loadModels() {
-  await Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri("./models"),
-    faceapi.nets.faceLandmark68Net.loadFromUri("./models"),
-    faceapi.nets.faceRecognitionNet.loadFromUri("./models")
-  ]);
-  status.textContent = "Model loaded ✓, loading faces...";
-  await loadLabeledFaces();
-  status.textContent = "Ready ✓ Look at the camera";
-  startCamera();
-}
-
-// ------------ Load Faces from folder ------------
+// ---------------- LOAD LABELED FACES ----------------
 async function loadLabeledFaces() {
-  const names = ["budi"]; // ← ganti sesuai folder wajah labeled
-  for (let name of names) {
+  log("Memuat data wajah & nama...");
+
+  const labels = ["budi"]; // ← tambah jika ada wajah lain
+  const labeledDescriptors = [];
+
+  for (const label of labels) {
     const descriptors = [];
     for (let i = 1; i <= 3; i++) {
-      const imgUrl = `./labeled/${name}/${i}.jpg`;
+      const imgUrl = `labeled/${label}/${i}.jpg`;
+      log("Ambil gambar: " + imgUrl);
+
       const img = await faceapi.fetchImage(imgUrl);
       const det = await faceapi
-        .detectSingleFace(img)
+        .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
-      if (det) descriptors.push(det.descriptor);
+
+      if (!det) {
+        log(`⚠ Wajah ${label} tidak terdeteksi — cek gambar`);
+        continue;
+      }
+      descriptors.push(det.descriptor);
     }
-    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
+    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, descriptors));
   }
   faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+  log("Data wajah selesai dimuat ✔");
 }
 
-// --------------- Start Camera ----------------
-async function startCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 640, height: 480 }
-  });
+// ---------------- CAMERA ----------------
+async function startVideo() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   video.srcObject = stream;
+  log("Kamera aktif");
   recognize();
 }
 
-// --------------- Recognition Loop ---------------
-function recognize() {
-  const ctx = overlay.getContext("2d");
+// ---------------- RECOGNITION LOOP ----------------
+async function recognize() {
   overlay.width = video.width;
   overlay.height = video.height;
+  const ctx = overlay.getContext("2d");
 
   setInterval(async () => {
     const detections = await faceapi
@@ -80,8 +96,8 @@ function recognize() {
     ctx.clearRect(0, 0, overlay.width, overlay.height);
 
     detections.forEach(det => {
-      const best = faceMatcher.findBestMatch(det.descriptor);
       const box = det.detection.box;
+      const best = faceMatcher.findBestMatch(det.descriptor);
 
       ctx.beginPath();
       ctx.lineWidth = 3;
@@ -91,13 +107,12 @@ function recognize() {
 
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
-      ctx.fillText(best.toString(), box.x, box.y - 5);
+      ctx.fillText(best.toString(), box.x, box.y - 10);
     });
-
-  }, 300); // deteksi 3x per detik → cepat & tidak lag
+  }, 300);
 }
 
-// Start
+// START
 loadModels();
 </script>
 </body>
