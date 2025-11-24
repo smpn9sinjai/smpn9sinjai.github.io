@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Face Recognition - Pengenalan Nama</title>
+
+  <style>
+    body { font-family: Arial; background:#f1f4f8; padding:20px; display:flex; gap:20px; }
+    video, canvas { border-radius:10px; }
+    .card { background:white; padding:16px; border-radius:12px; width:760px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    button{ padding:8px 14px; border:0; border-radius:8px; cursor:pointer; background:#2563eb; color:white }
+    button.stop{ background:#6b7280 }
+    #log { height:330px; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius:8px; font-size:13px }
+  </style>
+</head>
+
+<body>
+<div class="card">
+  <h2>Face Recognition dengan Nama</h2>
+  <p>Gunakan Webcam + face-api.js <b>untuk mengenali nama orang</b>.</p>
+
+  <div style="position:relative; display:inline-block;">
+    <video id="video" autoplay muted playsinline width="720" height="560"></video>
+    <canvas id="canvas" width="720" height="560" style="position:absolute; left:0; top:0;"></canvas>
+  </div><br><br>
+
+  <button id="startBtn">Mulai Kamera</button>
+  <button id="stopBtn" class="stop">Hentikan Kamera</button>
+
+  <p style="font-size:13px;color:#666">Jika file HTML dibuka langsung, browser mungkin menolak kamera. Jalankan via server: VSCode Live Server / XAMPP / python -m http.server</p>
+</div>
+
+<div class="card" style="width:300px;">
+  <h3>Log</h3>
+  <pre id="log">Menunggu...</pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+  /* =========================
+     GANTI URL INI SESUAI RAW GITHUB MILIK ANDA
+     contoh:
+     https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/models
+  ===========================*/
+  const MODEL_URL = "https://smpn9sinjai.sch.id/wajah/models/";
+
+  /* =========================
+     DAFTAR NAMA YANG ADA DI FOLDER labeled/
+     Contoh struktur:
+     labeled/Budi/1.jpg
+  ===========================*/
+  const LABELS = ["Budi", "Siti"]; // ← Tambahkan sesuai folder
+
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const logEl = document.getElementById("log");
+
+  let faceMatcher = null;
+  let interval = null;
+  let stream = null;
+
+  function log(x) {
+    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${x}\n` + logEl.textContent;
+  }
+
+  async function loadModels() {
+    log("Memuat model...");
+    await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
+    await faceapi.loadFaceLandmarkModel(MODEL_URL);
+    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+    log("Model selesai dimuat ✔");
+  }
+
+  async function loadLabeledFaces() {
+    log("Memuat data wajah & nama...");
+    const labeledDescriptors = [];
+
+    for (const label of LABELS) {
+      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
+      log("Ambil gambar: " + imgURL);
+
+      const img = await faceapi.fetchImage(imgURL);
+      const det = await faceapi.detectSingleFace(img)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!det) {
+        log(`⚠ Wajah ${label} tidak terdeteksi — cek gambar`);
+        continue;
+      }
+
+      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
+      log(`✔ Data wajah tersimpan: ${label}`);
+    }
+
+    return new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+  }
+
+  async function startCamera() {
+    await loadModels();
+    faceMatcher = await loadLabeledFaces();
+
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    await video.play();
+    log("Kamera aktif ✔");
+
+    interval = setInterval(async () => {
+      const result = await faceapi
+        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      result.forEach(res => {
+        const box = res.detection.box;
+        const match = faceMatcher.findBestMatch(res.descriptor).toString();
+
+        ctx.strokeStyle = "lime";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+        ctx.fillStyle = "yellow";
+        ctx.font = "20px Arial";
+        ctx.fillText(match, box.x, box.y - 8);
+      });
+
+    }, 150);
+  }
+
+  function stopCamera() {
+    if (interval) clearInterval(interval);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    log("Kamera berhenti.");
+  }
+
+  document.getElementById("startBtn").onclick = startCamera;
+  document.getElementById("stopBtn").onclick = stopCamera;
+</script>
+</body>
+</html>
