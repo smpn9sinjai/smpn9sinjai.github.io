@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Daftar Wajah ke JSON</title>
+  <script src="face-api.min.js"></script>
+  <style>
+    video { width: 360px; border:1px solid black; }
+    #msg { font-weight:bold; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <h3>Daftar Wajah Langsung Kamera</h3>
+
+  <video id="cam" autoplay></video>
+  <br>
+  <input id="nama" type="text" placeholder="Masukkan Nama"><br><br>
+  <button onclick="daftar()">Daftarkan Wajah</button>
+
+  <p id="msg"></p>
+
+  <script>
+    let database = [];
+
+    async function start() {
+      await faceapi.nets.tinyFaceDetector.load("/models/");
+      await faceapi.nets.faceRecognitionNet.load("/models/");
+      await faceapi.nets.faceLandmark68Net.load("/models/");
+
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => cam.srcObject = stream);
+
+      // kalau punya faces.json lama → load
+      try {
+        const old = await fetch("faces.json").then(r => r.json());
+        database = old;
+      } catch(e) {}
+    }
+    start();
+
+    async function daftar() {
+  const nama = document.getElementById("nama").value.trim();
+  if (!nama) return alert("Nama belum diisi");
+  msg.innerText = "Memproses...";
+
+  const deteksi = await faceapi.detectSingleFace(cam, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+  if (!deteksi) {
+    msg.innerText = "Wajah tidak ditemukan, coba lagi.";
+    return;
+  }
+
+  const descriptor = Array.from(deteksi.descriptor);
+
+  // 🔥 cek apakah data nama sudah ada
+  let existing = database.find(p => p.name === nama);
+  if (existing) {
+    existing.descriptors.push(descriptor);
+  } else {
+    database.push({ name: nama, descriptors: [descriptor] });
+  }
+
+  // download JSON
+  const file = new Blob([JSON.stringify(database, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(file);
+  a.download = "faces.json";
+  a.click();
+
+  msg.innerText = "Berhasil disimpan, ambil lagi 2 kali untuk akurasi maksimal.";
+}
+
+  </script>
+</body>
+</html>
