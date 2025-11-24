@@ -55,13 +55,18 @@
     logEl.textContent = `[${new Date().toLocaleTimeString()}] ${x}\n` + logEl.textContent;
   }
 
+ 
+
+
+
   async function loadModels() {
-    log("Memuat model...");
-    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-    log("Model selesai dimuat ✔");
-  }
+  log("Memuat model...");
+  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);       // untuk deteksi kamera
+  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);      // landmark wajah
+  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);     // identifikasi nama
+  log("Model selesai dimuat ✔");
+}
+
 
   async function loadLabeledFaces() {
     log("Memuat data wajah & nama...");
@@ -84,8 +89,8 @@
       labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
       log(`✔ Data wajah tersimpan: ${label}`);
     }
-
-    return new faceapi.FaceMatcher(labeledDescriptors, 0.45); // lebih sensitif & dekat
+return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+  
   }
 
   async function startCamera() {
