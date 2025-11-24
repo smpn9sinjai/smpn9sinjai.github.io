@@ -2,8 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Deteksi Wajah JSON</title>
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <title>Deteksi666  Wajah JSON</title>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <style>
     video { width: 420px; border:1px solid black; }
     canvas { position:absolute; left:0; top:0; }
@@ -13,69 +13,60 @@
   <h3>Deteksi Wajah & Tampilkan Nama</h3>
 
   <div style="position:relative;">
-    <video id="cam" autoplay></video>
+    <video id="cam" autoplay muted></video>
     <canvas id="canvas"></canvas>
   </div>
 
-  <script>
-    const video = document.getElementById("cam");
-    const canvas = document.getElementById("canvas");
+<script>
+const video = document.getElementById("cam");
+const canvas = document.getElementById("canvas");
 
-    async function start() {
-      await faceapi.nets.tinyFaceDetector.load("https://smpn9sinjai.sch.id/wajah/models/");
-      await faceapi.nets.faceRecognitionNet.load("https://smpn9sinjai.sch.id/wajah/models/");
-      await faceapi.nets.faceLandmark68Net.load("https://smpn9sinjai.sch.id/wajah/models/");
+async function start() {
+  await faceapi.nets.tinyFaceDetector.loadFromUri("https://smpn9sinjai.sch.id/wajah/models");
+  await faceapi.nets.faceRecognitionNet.loadFromUri("https://smpn9sinjai.sch.id/wajah/models");
+  await faceapi.nets.faceLandmark68Net.loadFromUri("https://smpn9sinjai.sch.id/wajah/models");
 
-      // Load JSON wajah
-      const data = await fetch("faces.json").then(r => r.json());
-      const labeled = data.map(p =>
-  new faceapi.LabeledFaceDescriptors(
-    p.name,
-    p.descriptors.map(d => new Float32Array(d))
-  )
-);
+  const data = await fetch("faces.json").then(r => r.json());
+  const labeled = data.map(p =>
+    new faceapi.LabeledFaceDescriptors(
+      p.name,
+      p.descriptors.map(d => new Float32Array(d))
+    )
+  );
 
+  const matcher = new faceapi.FaceMatcher(labeled, 0.45);
 
+  navigator.mediaDevices.getUserMedia({ video:true })
+    .then(stream => video.srcObject = stream);
 
-      
-      const matcher = new faceapi.FaceMatcher(labeled, 0.45);
+  video.addEventListener("playing", () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-      navigator.mediaDevices.getUserMedia({ video:true }).then(stream => {
-        video.srcObject = stream;
+    setInterval(async () => {
+      const detections = await faceapi.detectAllFaces(
+        video, new faceapi.TinyFaceDetectorOptions()
+      ).withFaceLandmarks().withFaceDescriptors();
+
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      detections.forEach(det => {
+        const best = matcher.findBestMatch(det.descriptor);
+        const box = det.detection.box;
+
+        ctx.strokeStyle = "lime";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+        ctx.fillStyle = "lime";
+        ctx.font = "18px Arial";
+        ctx.fillText(best.toString(), box.x + 5, box.y - 10);
       });
-
-      video.addEventListener("playing", () => {
-        canvas.width = video.width;
-        canvas.height = video.height;
-
-        setInterval(async () => {
-          const detections = await faceapi.detectAllFaces(
-            video,
-            new faceapi.TinyFaceDetectorOptions()
-          ).withFaceLandmarks().withFaceDescriptors();
-
-          const ctx = canvas.getContext("2d");
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-
-          detections.forEach(d => {
-            const best = matcher.findBestMatch(d.descriptor);
-            const box = d.detection.box;
-
-            // Gambar kotak
-            ctx.strokeStyle = "lime";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-            // Nama di atas kotak
-            ctx.fillStyle = "lime";
-            ctx.font = "18px Arial";
-            ctx.fillText(best.toString(), box.x + 5, box.y - 8);
-          });
-        }, 200);
-      });
-    }
-    start();
-  </script>
-
+    }, 200);
+  });
+}
+start();
+</script>
 </body>
 </html>
