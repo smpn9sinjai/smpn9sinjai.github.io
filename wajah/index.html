@@ -92,7 +92,20 @@
     await loadModels();
     faceMatcher = await loadLabeledFaces();
 
-    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    
+    
+
+     stream = await navigator.mediaDevices.getUserMedia({
+  video: {
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30, max: 60 },
+    facingMode: "user"   // kamera depan (untuk laptop otomatis oke)
+  },
+  audio: false
+});
+
     video.srcObject = stream;
     await video.play();
     log("Kamera aktif ✔");
@@ -103,22 +116,38 @@
         .withFaceLandmarks()
         .withFaceDescriptors();
 
+ 
+
+
+      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       if (detections.length === 0) return;
 
-      detections.forEach(d => {
-        const box = d.detection.box;
-        const match = faceMatcher.findBestMatch(d.descriptor).toString();
+     detections.forEach(d => {
+  const box = d.detection.box;
+  const match = faceMatcher.findBestMatch(d.descriptor);
+  const bestMatch = match.toString(); // nama + nilai distance
 
-        ctx.strokeStyle = "lime";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(box.x, box.y, box.width, box.height);
+  // cek tingkat kecocokan manual
+  let label;
+  if (match.distance < 0.55) {
+    label = match.label; // tampilkan nama
+  } else {
+    label = "Unknown";  // wajah mirip tapi belum cocok
+  }
 
-        ctx.fillStyle = "yellow";
-        ctx.font = "20px Arial";
-        ctx.fillText(match, box.x, box.y - 8);
-      });
+  // gambar persegi wajah
+  ctx.strokeStyle = "lime";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+  // label nama
+  ctx.fillStyle = "yellow";
+  ctx.font = "20px Arial";
+  ctx.fillText(`${label}`, box.x, box.y - 8);
+});
+
 
     }, 350);
   }
