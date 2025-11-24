@@ -1,187 +1,215 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengenalan Wajah Real-Time (Satu File)</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-
-    <style>
-        /* CSS Dasar */
-        body { 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh;
-            font-family: sans-serif;
-            background-color: #f4f4f9;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .video-container { 
-            position: relative; 
-            border: 4px solid #007bff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        video {
-            display: block;
-            border-radius: 4px;
-        }
-        canvas { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-        }
-        #loading-message {
-            margin-top: 15px;
-            font-size: 1.1em;
-            color: #ff6f00;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pengenalan Wajah (face-api.js)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f4f6f8; color:#111; display:flex; gap:20px; align-items:flex-start; padding:20px; }
+    .card{ background:white; padding:16px; border-radius:12px; box-shadow:0 6px 18px rgba(12,25,40,0.06); width:740px }
+    video{ border-radius:8px; max-width:100%; }
+    canvas{ position:absolute; left:0; top:0 }
+    .controls{ margin-top:8px; display:flex; gap:8px; align-items:center }
+    label{ font-size:14px }
+    .small{ font-size:13px; color:#555 }
+    .right{ width:300px }
+    button{ padding:8px 12px; border-radius:8px; border:0; background:#2563eb; color:white; cursor:pointer }
+    button.secondary{ background:#6b7280 }
+    input[type=file]{ display:none }
+    .hint{ margin-top:10px; font-size:13px; color:#444 }
+  </style>
 </head>
 <body>
-    <h1>Deteksi & Pengenalan Wajah Real-Time</h1>
-    <div id="loading-message">Memuat model Machine Learning... Mohon Tunggu.</div>
-    
-    <div class="video-container">
-        <video id="video" width="640" height="480" autoplay muted></video>
-        </div>
+  <div class="card">
+    <h2>Pengenalan Wajah — Webcam</h2>
+    <p class="small">Menggunakan <code>face-api.js</code> via CDN. Pastikan models di-host di GitHub (raw URL). Perbarui <code>MODEL_URL</code> di skrip sesuai repo Anda.</p>
 
-    <script>
-        // Logika JavaScript untuk Pengenalan Wajah
+    <div style="position:relative; display:inline-block">
+      <video id="video" autoplay muted playsinline width="720" height="560"></video>
+      <canvas id="overlay" width="720" height="560"></canvas>
+    </div>
 
-        const video = document.getElementById('video');
-        const loadingMessage = document.getElementById('loading-message');
-        let faceMatcher; // Variabel untuk menyimpan deskriptor wajah yang dikenal
+    <div class="controls">
+      <button id="startBtn">Mulai Kamera</button>
+      <button id="stopBtn" class="secondary">Hentikan</button>
+      <button id="snapshotBtn" class="secondary">Ambil Snapshot</button>
+      <label style="margin-left:auto">Deteksi: 
+        <select id="modeSelect">
+          <option value="tiny">TinyFaceDetector (cepat)</option>
+          <option value="ssd">SSD MobileNet (lebih akurat)</option>
+        </select>
+      </label>
+    </div>
 
-        // 1. Memuat Model
-        // Pastikan folder 'models' ada di direktori yang sama!
-        Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-            faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-        ]).then(initializeApp).catch(err => {
-            loadingMessage.textContent = 'Gagal memuat model. Pastikan folder /models sudah benar!';
-            console.error('Error loading models:', err);
-        });
+    <p class="hint">Catatan: jika membuka file langsung (.html) browser mungkin menolak akses kamera. Jalankan lewat localhost (mis. Live Server / python -m http.server) atau host di server HTTPS.</p>
 
-        async function initializeApp() {
-            loadingMessage.textContent = 'Model berhasil dimuat. Melakukan pelatihan data wajah...';
-            
-            // 2. Pelatihan/Mendefinisikan Wajah yang Dikenal
-            try {
-                faceMatcher = await loadLabeledImages();
-                loadingMessage.textContent = 'Pelatihan selesai. Memulai kamera...';
-                startVideo();
-            } catch (error) {
-                loadingMessage.textContent = 'Gagal memuat atau melatih gambar wajah. Pastikan folder /images sudah benar!';
-                console.error('Error training faces:', error);
+    <hr />
+    <h3>Pengaturan model</h3>
+    <p class="small">Ganti string <code>MODEL_URL</code> ke raw GitHub URL tempat Anda meletakkan folder <code>models</code>. Contoh: <code>https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/models</code></p>
+  </div>
+
+  <div class="card right">
+    <h3>Log</h3>
+    <pre id="log" style="height:360px; overflow:auto; white-space:pre-wrap;">Menunggu aksi...</pre>
+  </div>
+
+  <!-- face-api.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script>
+    // Ubah ini ke lokasi 'models' Anda (raw.githubusercontent.com/.../models)
+    let MODEL_URL = 'https://smpn9sinjai.sch.id/wajah/models/'
+
+    const video = document.getElementById('video')
+    const overlay = document.getElementById('overlay')
+    const ctx = overlay.getContext('2d')
+    const logEl = document.getElementById('log')
+
+    const startBtn = document.getElementById('startBtn')
+    const stopBtn = document.getElementById('stopBtn')
+    const snapshotBtn = document.getElementById('snapshotBtn')
+    const modeSelect = document.getElementById('modeSelect')
+
+    let stream = null
+    let detectInterval = null
+
+    function log(...args){
+      const t = new Date().toLocaleTimeString()
+      logEl.textContent = `[${t}] ` + args.join(' ') + '\n' + logEl.textContent
+    }
+
+    async function loadModels(){
+      log('Memuat model dari', MODEL_URL)
+      // wajib: tinyFaceDetector or ssdMobilenetv1 + landmark + recognition (jika ingin face recognition)
+      await faceapi.loadTinyFaceDetectorModel(MODEL_URL).catch(()=>{})
+      await faceapi.loadSsdMobilenetv1Model(MODEL_URL).catch(()=>{})
+      await faceapi.loadFaceLandmarkModel(MODEL_URL)
+      await faceapi.loadFaceRecognitionModel(MODEL_URL)
+      await faceapi.loadFaceExpressionModel(MODEL_URL)
+      log('Model siap (periksa console/Log jika error)')
+    }
+
+    async function startCamera(){
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 720, height: 560 }, audio: false })
+        video.srcObject = stream
+        await video.play()
+        overlay.width = video.videoWidth
+        overlay.height = video.videoHeight
+        runDetectionLoop()
+        log('Kamera berjalan')
+      }catch(err){
+        log('Gagal akses kamera:', err.message || err)
+        console.error(err)
+      }
+    }
+
+    function stopCamera(){
+      if(stream){
+        stream.getTracks().forEach(t=>t.stop())
+        stream = null
+      }
+      if(detectInterval) clearInterval(detectInterval)
+      ctx.clearRect(0,0,overlay.width, overlay.height)
+      log('Kamera dihentikan')
+    }
+
+    async function runDetectionLoop(){
+      if(detectInterval) clearInterval(detectInterval)
+      detectInterval = setInterval(async ()=>{
+        if(video.paused || video.ended) return
+        const mode = modeSelect.value
+        const options = mode === 'tiny'
+          ? new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })
+          : new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })
+
+        const results = await faceapi.detectAllFaces(video, options)
+          .withFaceLandmarks()
+          .withFaceExpressions()
+          .withFaceDescriptors()
+
+        // gambar overlay
+        ctx.clearRect(0,0,overlay.width, overlay.height)
+        ctx.drawImage(video, 0, 0, overlay.width, overlay.height)
+
+        if(results.length === 0){
+          // nothing
+        } else {
+          results.forEach(res => {
+            const { alignedRect, detection, landmarks, expressions } = res
+            const box = alignedRect.box
+            // bounding box
+            ctx.beginPath()
+            ctx.lineWidth = 2
+            ctx.strokeStyle = 'lime'
+            ctx.rect(box.x, box.y, box.width, box.height)
+            ctx.stroke()
+
+            // landmarks
+            const pts = landmarks.positions
+            ctx.fillStyle = 'red'
+            for(let i=0;i<pts.length;i++){
+              ctx.fillRect(pts[i].x-1, pts[i].y-1, 3,3)
             }
+
+            // expressions top expression
+            const sorted = Object.entries(expressions).sort((a,b)=>b[1]-a[1])
+            const top = sorted[0]
+            const text = top ? `${top[0]} (${(top[1]*100).toFixed(0)}%)` : ''
+            ctx.fillStyle = 'yellow'
+            ctx.font = '18px system-ui'
+            ctx.fillText(text, box.x, Math.max(20, box.y-6))
+          })
         }
 
-        // 3. Akses Webcam
-        function startVideo() {
-            navigator.mediaDevices.getUserMedia(
-                { video: {} }
-            ).then(stream => {
-                video.srcObject = stream;
-            }).catch(err => {
-                loadingMessage.textContent = 'Akses kamera ditolak atau gagal. Coba di browser lain atau pastikan izin kamera diberikan.';
-                console.error('Error accessing camera:', err);
-            });
-        }
+      }, 150) // interval 150ms (~6-7 fps). Atur sesuai performa
+    }
 
-        // Setelah video dimuat, mulai deteksi
-        video.addEventListener('play', () => {
-            loadingMessage.textContent = 'Deteksi wajah berjalan secara real-time.';
+    snapshotBtn.addEventListener('click', ()=>{
+      const link = document.createElement('a')
+      link.download = `snapshot_${Date.now()}.png`
+      link.href = overlay.toDataURL('image/png')
+      link.click()
+      log('Snapshot diunduh')
+    })
 
-            // Membuat canvas untuk menggambar hasil deteksi
-            const canvas = faceapi.createCanvasFromMedia(video);
-            document.querySelector('.video-container').append(canvas);
-            const displaySize = { width: video.width, height: video.height };
-            faceapi.matchDimensions(canvas, displaySize);
-            
-            // 4. Deteksi Wajah Real-Time
-            setInterval(async () => {
-                const detections = await faceapi.detectAllFaces(
-                    video, 
-                    new faceapi.TinyFaceDetectorOptions()
-                )
-                    .withFaceLandmarks()
-                    .withFaceDescriptors(); // Ekstraksi Fitur
-                
-                const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    startBtn.addEventListener('click', async ()=>{
+      startBtn.disabled = true
+      await loadModels()
+      await startCamera()
+      startBtn.disabled = false
+    })
 
-                // 5. Pengenalan Wajah
-                if (faceMatcher) {
-                    const results = resizedDetections.map(d => 
-                        faceMatcher.findBestMatch(d.descriptor)
-                    );
-    
-                    results.forEach((bestMatch, i) => {
-                        const box = resizedDetections[i].detection.box;
-                        // Teks akan berupa nama atau "unknown"
-                        const text = bestMatch.toString(); 
-                        const drawBox = new faceapi.draw.DrawBox(box, { label: text });
-                        drawBox.draw(canvas);
-                    });
-                } else {
-                    // Jika faceMatcher belum siap, gambar saja kotak deteksi
-                    faceapi.draw.drawDetections(canvas, resizedDetections);
-                }
+    stopBtn.addEventListener('click', ()=>{
+      stopCamera()
+    })
 
-            }, 100); // Lakukan deteksi setiap 100ms
-        });
+    // Resize canvas apabila jendela diubah
+    window.addEventListener('resize', ()=>{
+      if(video.videoWidth){
+        overlay.width = video.videoWidth
+        overlay.height = video.videoHeight
+      }
+    })
 
-        // FUNGSI KRITIS: Memuat dan Melatih Data Wajah
-        function loadLabeledImages() {
-            // Ubah list ini sesuai dengan nama folder dan orang yang ingin Anda kenali!
-            const labels = ['Budi', 'Ani', 'Charlie']; 
-            const MAX_IMAGES_PER_LABEL = 2; // Sesuaikan dengan jumlah gambar per folder (e.g., 1.jpg, 2.jpg)
+    // Jika pengguna ingin menambahkan face matcher / recognition
+    // Anda bisa menyiapkan labeledDescriptors (FaceDescriptor) yang dimuat dari gambar
+    // Contoh singkat (jangan lupa letakkan gambar label di repo Anda):
+    /*
+    async function createFaceMatcher(){
+      const labels = ['Budi','Siti']
+      const labeledDescriptors = []
+      for(const label of labels){
+        const imgUrl = `${YOUR_GITHUB_RAW}/labeled_images/${label}/1.jpg`
+        const img = await faceapi.fetchImage(imgUrl)
+        const detections = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
+        if(detections) labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [detections.descriptor]))
+      }
+      return new faceapi.FaceMatcher(labeledDescriptors, 0.6)
+    }
+    */
 
-            return Promise.all(
-                labels.map(async label => {
-                    const descriptors = [];
-                    for (let i = 1; i <= MAX_IMAGES_PER_LABEL; i++) {
-                        // Pastikan path ini benar: images/NamaOrang/nomor.jpg
-                        const imageUrl = `images/${label}/${i}.jpg`;
-                        try {
-                            const img = await faceapi.fetchImage(imageUrl);
-                            const fullFaceDescription = await faceapi.detectSingleFace(img)
-                                .withFaceLandmarks()
-                                .withFaceDescriptor();
-    
-                            if (fullFaceDescription) {
-                                descriptors.push(fullFaceDescription.descriptor);
-                            } else {
-                                console.warn(`Wajah tidak terdeteksi pada ${imageUrl}`);
-                            }
-                        } catch (e) {
-                            console.error(`Gagal memuat gambar ${imageUrl}:`, e);
-                        }
-                    }
-                    
-                    if (descriptors.length === 0) {
-                        console.error(`Tidak ada deskriptor wajah yang berhasil dimuat untuk ${label}.`);
-                    }
-
-                    // Ambang batas (threshold) 0.6 adalah nilai standar untuk akurasi
-                    return new faceapi.LabeledFaceDescriptors(label, descriptors);
-                })
-            ).then(labeledFaceDescriptors => 
-                // Filter descriptor yang kosong
-                labeledFaceDescriptors.filter(d => d.descriptors.length > 0)
-            ).then(validLabeledFaceDescriptors => 
-                new faceapi.FaceMatcher(validLabeledFaceDescriptors, 0.6)
-            );
-        }
-    </script>
+    // Simple auto-start if you prefer (comment out otherwise)
+    // loadModels().then(()=>log('Model dimuat (auto)'))
+  </script>
 </body>
 </html>
