@@ -64,31 +64,44 @@
     log("Model selesai dimuat ✔");
   }
 
-  async function loadLabeledFaces() {
-    log("Memuat data wajah & nama...");
-    const labeledDescriptors = [];
+   async function loadLabeledFaces() {
+  log("Memuat data wajah & nama...");
+  const labeledDescriptors = [];
 
-    for (const label of LABELS) {
-      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
+  for (const label of LABELS) {
+    const descriptors = [];
+
+    for (let i = 1; i <= 3; i++) {   // 🔥 3 foto per orang
+      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/${i}.jpg`;
       log("Ambil gambar: " + imgURL);
 
-      const img = await faceapi.fetchImage(imgURL);
-      const det = await faceapi
-        .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+      try {
+        const img = await faceapi.fetchImage(imgURL);
+        const det = await faceapi
+          .detectSingleFace(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
-      if (!det) {
-        log(`⚠ Wajah ${label} tidak terdeteksi — cek gambar`);
-        continue;
+        if (det) {
+          descriptors.push(det.descriptor);
+          log(`✔ Gambar ${label} ke-${i} terdeteksi`);
+        } else {
+          log(`⚠ Tidak terdeteksi pada: ${label}/${i}.jpg`);
+        }
+      } catch (e) {
+        log(`⚠ Gambar tidak ditemukan: ${label}/${i}.jpg`);
       }
-
-      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
-      log(`✔ Data wajah tersimpan: ${label}`);
     }
 
-    return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+    if (descriptors.length > 0) {
+      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, descriptors));
+      log(`✔ Semua data ${label} tersimpan (${descriptors.length} foto)`);
+    }
   }
+
+  return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+}
+
 
   async function startCamera() {
     await loadModels();
