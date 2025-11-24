@@ -22,9 +22,9 @@
     const canvas = document.getElementById("canvas");
 
     async function start() {
-      await faceapi.nets.tinyFaceDetector.load("https://smpn9sinjai.sch.id/wajah/models/");
-      await faceapi.nets.faceRecognitionNet.load("https://smpn9sinjai.sch.id/wajah/models/");
-      await faceapi.nets.faceLandmark68Net.load("https://smpn9sinjai.sch.id/wajah/models/");
+      await faceapi.nets.tinyFaceDetector.load("/models/");
+      await faceapi.nets.faceRecognitionNet.load("/models/");
+      await faceapi.nets.faceLandmark68Net.load("/models/");
 
       // Load JSON wajah
       const data = await fetch("faces.json").then(r => r.json());
