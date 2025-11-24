@@ -19,7 +19,7 @@
   </style>
 </head>
 <body>
-  <h1>Deteksi Wajah &amp; Simpan Nama — Demo HTML</h1>
+  <h1>Deteksi 55 Wajah &amp; Simpan Nama — Demo HTML</h1>
   <p class="hint">Buka akses kamera saat diminta. Arahkan wajah ke kamera, masukkan nama lalu tekan <strong>Save</strong> untuk menyimpan embedding wajah ke <code>localStorage</code>.</p>
 
   <div id="container">
@@ -48,7 +48,7 @@
   <!-- face-api.js dari CDN -->
   <script src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script>
-    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+    const MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js/models";
     const video = document.getElementById('video')
     const overlay = document.getElementById('overlay')
     const ctx = overlay.getContext('2d')
@@ -60,25 +60,24 @@
     const importFile = document.getElementById('importFile')
 
     const LOCAL_KEY = 'face_db_v1'
-    let labeledDescriptors = [] // array of faceapi.LabeledFaceDescriptors
+    let labeledDescriptors = []
     let faceMatcher = null
     let detecting = false
 
     async function loadModels() {
-      // muat model yang diperlukan
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL)
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-      // optional: expression / age gender jika ingin
     }
 
     async function startCamera() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: {} , audio: false })
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         video.srcObject = stream
-        return new Promise(res => video.onloadedmetadata = res)
+        return new Promise(res => video.onloadeddata = res)
       } catch (e) {
         alert('Gagal akses kamera: ' + e.message)
+        throw e
       }
     }
 
@@ -87,35 +86,25 @@
       overlay.height = video.videoHeight
     }
 
-    // muat DB dari localStorage
     function loadDB(){
       const raw = localStorage.getItem(LOCAL_KEY)
-      if (!raw) return []
+      if (!raw) return
       try {
         const parsed = JSON.parse(raw)
-        // parsed: [{name: 'Budi', descriptors: [[...], ...]}, ...]
-        const arr = parsed.map(item => {
-          const descs = item.descriptors.map(d => new Float32Array(d))
-          return new faceapi.LabeledFaceDescriptors(item.name, descs)
-        })
-        labeledDescriptors = arr
-      } catch (e) {
-        console.error('Gagal parse DB', e)
-        labeledDescriptors = []
-      }
+        labeledDescriptors = parsed.map(item => new faceapi.LabeledFaceDescriptors(item.name, item.descriptors.map(d => new Float32Array(d))))
+      } catch(e) { labeledDescriptors = [] }
       rebuildMatcher()
       refreshLabelList()
     }
 
     function saveDB(){
-      const toSave = labeledDescriptors.map(ld => ({ name: ld.label, descriptors: ld.descriptors.map(d => Array.from(d)) }))
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(toSave))
+      const out = labeledDescriptors.map(ld => ({ name: ld.label, descriptors: ld.descriptors.map(d => Array.from(d)) }))
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(out))
       refreshLabelList()
     }
 
     function rebuildMatcher(){
-      if (labeledDescriptors.length === 0) { faceMatcher = null; return }
-      faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6) // threshold 0.6
+      faceMatcher = labeledDescriptors.length ? new faceapi.FaceMatcher(labeledDescriptors, 0.6) : null
     }
 
     function refreshLabelList(){
@@ -128,107 +117,106 @@
     }
 
     async function detectLoop(){
-      if (!video || video.readyState !== 4) { requestAnimationFrame(detectLoop); return }
-      if (!detecting) { requestAnimationFrame(detectLoop); return }
+      if (!detecting) return requestAnimationFrame(detectLoop)
 
-      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+      const options = new faceapi.TinyFaceDetectorOptions()
       const detections = await faceapi.detectAllFaces(video, options).withFaceLandmarks().withFaceDescriptors()
 
       resizeCanvasToVideo()
-      ctx.clearRect(0,0,overlay.width, overlay.height)
+      ctx.clearRect(0,0,overlay.width,overlay.height)
 
-      if (detections && detections.length > 0){
-        detections.forEach(det => {
-          const box = det.detection.box
-          const descriptor = det.descriptor
+      detections.forEach(det => {
+        const box = det.detection.box
+        const desc = det.descriptor
+        ctx.strokeStyle = '#00FF00'
+        ctx.lineWidth = 2
+        ctx.strokeRect(box.x, box.y, box.width, box.height)
 
-          // gambar kotak
-          ctx.lineWidth = 2
-          ctx.strokeStyle = '#00FF00'
-          ctx.strokeRect(box.x, box.y, box.width, box.height)
+        let label = 'Unknown'
+        if (faceMatcher){
+          const best = faceMatcher.findBestMatch(desc)
+          label = best.toString()
+        }
 
-          let text = 'Unknown'
-          if (faceMatcher){
-            const best = faceMatcher.findBestMatch(descriptor)
-            text = best.toString() // nama (distance)
-          }
-
-          // label
-          ctx.fillStyle = '#00FF00'
-          ctx.font = '16px sans-serif'
-          ctx.fillText(text, box.x, Math.max(20, box.y - 6))
-        })
-      }
+        ctx.fillStyle = '#00FF00'
+        ctx.font = '16px sans-serif'
+        ctx.fillText(label, box.x, box.y - 4)
+      })
 
       requestAnimationFrame(detectLoop)
     }
 
-    // simpan descriptor saat tombol Save
     saveBtn.addEventListener('click', async ()=>{
       const name = nameInput.value.trim()
-      if (!name) { alert('Masukkan nama dulu'); return }
-      // deteksi sekali wajah terbaik
-      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
-      const detection = await faceapi.detectSingleFace(video, options).withFaceLandmarks().withFaceDescriptor()
-      if (!detection) { alert('Tidak menemukan wajah di kamera. Pastikan wajah terlihat jelas.'); return }
-      const descriptor = detection.descriptor
+      if (!name) return alert('Masukkan nama dulu')
 
-      // cari label yang sama
+      const options = new faceapi.TinyFaceDetectorOptions()
+      const det = await faceapi.detectSingleFace(video, options).withFaceLandmarks().withFaceDescriptor()
+      if (!det) return alert('Wajah tidak ditemukan')
+
       const existing = labeledDescriptors.find(ld => ld.label === name)
-      if (existing) {
-        existing.descriptors.push(descriptor)
-      } else {
-        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, [descriptor]))
-      }
-      saveDB()
+      if (existing) existing.descriptors.push(det.descriptor)
+      else labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, [det.descriptor]))
+
       rebuildMatcher()
-      alert('Wajah tersimpan untuk: ' + name)
+      saveDB()
+      alert('Wajah disimpan untuk: '+name)
     })
 
     clearDbBtn.addEventListener('click', ()=>{
-      if (!confirm('Hapus seluruh database wajah yang tersimpan di localStorage?')) return
+      if (!confirm('Hapus seluruh database?')) return
       localStorage.removeItem(LOCAL_KEY)
-      labeledDescriptors = []
+      labeledDescriptors=[]
       rebuildMatcher()
       refreshLabelList()
     })
 
     exportBtn.addEventListener('click', ()=>{
-      const raw = localStorage.getItem(LOCAL_KEY) || '[]'
-      const blob = new Blob([raw], {type:'application/json'})
+      const blob = new Blob([localStorage.getItem(LOCAL_KEY)||'[]'], {type:'application/json'})
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url; a.download = 'face_db.json'; a.click()
+      a.href=url; a.download='face_db.json'; a.click()
       URL.revokeObjectURL(url)
     })
 
-    importFile.addEventListener('change', (e)=>{
-      const f = e.target.files[0]
-      if (!f) return
-      const fr = new FileReader()
-      fr.onload = function(){
+    importFile.addEventListener('change', e=>{
+      const f = e.target.files[0]; if(!f) return;
+      const r = new FileReader()
+      r.onload = ()=>{
         try {
-          const parsed = JSON.parse(fr.result)
-          // validate minimal
-          if (!Array.isArray(parsed)) throw new Error('Format tidak valid')
-          localStorage.setItem(LOCAL_KEY, JSON.stringify(parsed))
+          JSON.parse(r.result)
+          localStorage.setItem(LOCAL_KEY, r.result)
           loadDB()
-          alert('Impor selesai')
-        } catch (err){ alert('Gagal impor: '+err.message) }
+        } catch{
+          alert('Format tidak valid')
+        }
       }
-      fr.readAsText(f)
+      r.readAsText(f)
     })
 
-    // inisialisasi
-    (async ()=>{
-      await loadModels()
-      await startCamera()
-      loadDB()
-      // mulai deteksi otomatis
-      detecting = true
-      detectLoop()
-    })()
+    // INIT FIXED
+    (async () => {
+      try {
+        console.log("Loading models...")
+        await loadModels()
+        console.log("Models OK")
 
-  </script>
+        console.log("Starting camera...")
+        await startCamera()
+        console.log("Camera OK")
+
+        video.addEventListener('loadeddata', ()=>{
+          console.log('Video ready, starting detection...')
+          loadDB()
+          detecting = true
+          detectLoop()
+        })
+
+      } catch(err){
+        console.error(err)
+        alert('Error init: '+err.message)
+      }
+    })()
+</script>
 </body>
 </html>
