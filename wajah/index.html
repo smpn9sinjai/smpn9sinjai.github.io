@@ -1,170 +1,104 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Face Recognition - Pengenalan Nama</title>
-
-  <style>
-    body { font-family: Arial; background:#f1f4f8; padding:20px; display:flex; gap:20px; }
-    video, canvas { border-radius:10px; }
-    .card { background:white; padding:16px; border-radius:12px; width:760px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    button{ padding:8px 14px; border:0; border-radius:8px; cursor:pointer; background:#2563eb; color:white }
-    button.stop{ background:#6b7280 }
-    #log { height:330px; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius:8px; font-size:13px }
-  </style>
+<meta charset="UTF-8">
+<title>Face Recognition - SSD Fast</title>
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+<style>
+  body { text-align:center; font-family:Arial; background:#f4f7ff; }
+  #video { border:4px solid #4a6cf7; border-radius:12px; margin-top:20px; }
+  #status { margin-top:15px; font-weight:bold; }
+</style>
 </head>
-
 <body>
-<div class="card">
-  <h2>Face Recognition dengan Nama</h2>
-  <p>Gunakan Webcam + face-api.js <b>untuk mengenali nama orang</b>.</p>
 
-  <div style="position:relative; display:inline-block;">
-    <video id="video" autoplay muted playsinline width="720" height="560"></video>
-    <canvas id="canvas" width="720" height="560" style="position:absolute; left:0; top:0;"></canvas>
-  </div><br><br>
+<h2>🔍 Face Recognition (SsdMobilenetv1 Optimized)</h2>
+<video id="video" width="640" height="480" autoplay muted></video>
+<canvas id="overlay"></canvas>
+<div id="status">Loading models...</div>
 
-  <button id="startBtn">Mulai Kamera</button>
-  <button id="stopBtn" class="stop">Hentikan Kamera</button>
-
-  <p style="font-size:13px;color:#666">Jika file HTML dibuka langsung, browser mungkin menolak kamera. Jalankan via server: VSCode Live Server / XAMPP / python -m http.server</p>
-</div>
-
-<div class="card" style="width:300px;">
-  <h3>Log</h3>
-  <pre id="log">Menunggu...</pre>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-  const MODEL_URL = "https://smpn9sinjai.sch.id/wajah/models/";
-  const LABELS = ["budi"]; // Tambahkan nama lain jika folder bertambah
+const video = document.getElementById("video");
+const overlay = document.getElementById("overlay");
+const status = document.getElementById("status");
+let labeledDescriptors = [];
+let faceMatcher;
 
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-  const logEl = document.getElementById("log");
-
-  let faceMatcher = null;
-  let interval = null;
-  let stream = null;
-
-  function log(x) {
-    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${x}\n` + logEl.textContent;
-  }
-
- 
-
-
-
-  async function loadModels() {
-  log("Memuat model...");
-  await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);       // untuk deteksi kamera
-  await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);      // landmark wajah
-  await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);     // identifikasi nama
-  log("Model selesai dimuat ✔");
+// ---------------- Load Models ----------------
+async function loadModels() {
+  await Promise.all([
+    faceapi.nets.ssdMobilenetv1.loadFromUri("./models"),
+    faceapi.nets.faceLandmark68Net.loadFromUri("./models"),
+    faceapi.nets.faceRecognitionNet.loadFromUri("./models")
+  ]);
+  status.textContent = "Model loaded ✓, loading faces...";
+  await loadLabeledFaces();
+  status.textContent = "Ready ✓ Look at the camera";
+  startCamera();
 }
 
-
-  async function loadLabeledFaces() {
-    log("Memuat data wajah & nama...");
-    const labeledDescriptors = [];
-
-    for (const label of LABELS) {
-      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
-      log("Ambil gambar: " + imgURL);
-
-      const img = await faceapi.fetchImage(imgURL);
-      const det = await faceapi.detectSingleFace(img)
+// ------------ Load Faces from folder ------------
+async function loadLabeledFaces() {
+  const names = ["budi"]; // ← ganti sesuai folder wajah labeled
+  for (let name of names) {
+    const descriptors = [];
+    for (let i = 1; i <= 3; i++) {
+      const imgUrl = `./labeled/${name}/${i}.jpg`;
+      const img = await faceapi.fetchImage(imgUrl);
+      const det = await faceapi
+        .detectSingleFace(img)
         .withFaceLandmarks()
         .withFaceDescriptor();
-
-      if (!det) {
-        log(`⚠ Wajah ${label} tidak terdeteksi — cek gambar`);
-        continue;
-      }
-
-      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
-      log(`✔ Data wajah tersimpan: ${label}`);
+      if (det) descriptors.push(det.descriptor);
     }
-return new faceapi.FaceMatcher(labeledDescriptors, 0.55);
-  
+    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, descriptors));
   }
+  faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+}
 
-  async function startCamera() {
-    await loadModels();
-    faceMatcher = await loadLabeledFaces();
+// --------------- Start Camera ----------------
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480 }
+  });
+  video.srcObject = stream;
+  recognize();
+}
 
+// --------------- Recognition Loop ---------------
+function recognize() {
+  const ctx = overlay.getContext("2d");
+  overlay.width = video.width;
+  overlay.height = video.height;
 
-    
-    
+  setInterval(async () => {
+    const detections = await faceapi
+      .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+      .withFaceLandmarks()
+      .withFaceDescriptors();
 
-     stream = await navigator.mediaDevices.getUserMedia({
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    frameRate: { ideal: 30, max: 60 },
-    facingMode: "user"   // kamera depan (untuk laptop otomatis oke)
-  },
-  audio: false
-});
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
 
-    video.srcObject = stream;
-    await video.play();
-    log("Kamera aktif ✔");
+    detections.forEach(det => {
+      const best = faceMatcher.findBestMatch(det.descriptor);
+      const box = det.detection.box;
 
-    interval = setInterval(async () => {
-      const detections = await faceapi
-        .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-        .withFaceLandmarks()
-        .withFaceDescriptors();
+      ctx.beginPath();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = best.label === "unknown" ? "red" : "lime";
+      ctx.rect(box.x, box.y, box.width, box.height);
+      ctx.stroke();
 
- 
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText(best.toString(), box.x, box.y - 5);
+    });
 
+  }, 300); // deteksi 3x per detik → cepat & tidak lag
+}
 
-      
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      if (detections.length === 0) return;
-
-     detections.forEach(d => {
-  const box = d.detection.box;
-  const match = faceMatcher.findBestMatch(d.descriptor);
-  const bestMatch = match.toString(); // nama + nilai distance
-
-  // cek tingkat kecocokan manual
-  let label;
-  if (match.distance < 0.55) {
-    label = match.label; // tampilkan nama
-  } else {
-    label = "Unknown";  // wajah mirip tapi belum cocok
-  }
-
-  // gambar persegi wajah
-  ctx.strokeStyle = "lime";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-  // label nama
-  ctx.fillStyle = "yellow";
-  ctx.font = "20px Arial";
-  ctx.fillText(`${label}`, box.x, box.y - 8);
-});
-
-
-    }, 350);
-  }
-
-  function stopCamera() {
-    if (interval) clearInterval(interval);
-    if (stream) stream.getTracks().forEach(t => t.stop());
-    log("Kamera berhenti.");
-  }
-
-  document.getElementById("startBtn").onclick = startCamera;
-  document.getElementById("stopBtn").onclick = stopCamera;
+// Start
+loadModels();
 </script>
 </body>
 </html>
