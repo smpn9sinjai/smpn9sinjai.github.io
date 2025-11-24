@@ -83,6 +83,7 @@ await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 
     for (const label of LABELS) {
       const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
+      alert(imgURL)
       log("Ambil gambar: " + imgURL);
 
       const img = await faceapi.fetchImage(imgURL);
