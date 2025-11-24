@@ -37,10 +37,11 @@
   <pre id="log">Menunggu...</pre>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-  const MODEL_URL = "https://smpn9sinjai.sch.id/wajah/models/";
-  const LABELS = ["budi"];
+  const BASE_URL = "https://smpn9sinjai.sch.id/wajah";
+  const MODEL_URL = BASE_URL + "/models";
+  const LABELS = ["budi"]; // jika ingin tambah → ["budi","agus","sari"]
 
   const video = document.getElementById("video");
   const canvas = document.getElementById("canvas");
@@ -68,7 +69,7 @@
     const labeledDescriptors = [];
 
     for (const label of LABELS) {
-      const imgURL = MODEL_URL.replace("/models","") + `/labeled/${label}/1.jpg`;
+      const imgURL = `${BASE_URL}/labeled/${label}/1.jpg`;
       log("Ambil gambar: " + imgURL);
 
       const img = await faceapi.fetchImage(imgURL);
@@ -81,7 +82,9 @@
         continue;
       }
 
-      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(label, [det.descriptor]));
+      labeledDescriptors.push(
+        new faceapi.LabeledFaceDescriptors(label, [det.descriptor])
+      );
       log(`✔ Data wajah tersimpan: ${label}`);
     }
 
@@ -98,34 +101,24 @@
     log("Kamera aktif ✔");
 
     interval = setInterval(async () => {
-     // const detections = await faceapi
-       // .detectAllFaces(video, new faceapi.SsdMobilenetv1Options())   // ← diperbaiki
-       // .withFaceLandmarks()
-      //  .withFaceDescriptors();
+      const detections = await faceapi
+        .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-
-
-const detections = await faceapi
-  .detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
-  .withFaceLandmarks()
-  .withFaceDescriptors();
-
-
-
-      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       detections.forEach(d => {
         const box = d.detection.box;
-        const match = faceMatcher.findBestMatch(d.descriptor).toString();
+        const result = faceMatcher.findBestMatch(d.descriptor).toString();
 
         ctx.strokeStyle = "lime";
         ctx.lineWidth = 2;
         ctx.strokeRect(box.x, box.y, box.width, box.height);
 
         ctx.fillStyle = "yellow";
-        ctx.font = "20px Arial";
-        ctx.fillText(match, box.x, box.y - 8);
+        ctx.font = "22px Arial";
+        ctx.fillText(result, box.x, box.y - 5);
       });
     }, 150);
   }
@@ -139,5 +132,7 @@ const detections = await faceapi
   document.getElementById("startBtn").onclick = startCamera;
   document.getElementById("stopBtn").onclick = stopCamera;
 </script>
+ 
+ 
 </body>
 </html>
