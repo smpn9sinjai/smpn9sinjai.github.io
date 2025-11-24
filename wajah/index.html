@@ -68,9 +68,12 @@
 
   async function loadModels() {
     log("Memuat model...");
-    await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
-    await faceapi.loadFaceLandmarkModel(MODEL_URL);
-    await faceapi.loadFaceRecognitionModel(MODEL_URL);
+     await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+   // await faceapi.loadTinyFaceDetectorModel(MODEL_URL);
+   // await faceapi.loadFaceLandmarkModel(MODEL_URL);
+   // await faceapi.loadFaceRecognitionModel(MODEL_URL);
     log("Model selesai dimuat ✔");
   }
 
