@@ -98,11 +98,21 @@
     log("Kamera aktif ✔");
 
     interval = setInterval(async () => {
-      const detections = await faceapi
-        .detectAllFaces(video, new faceapi.SsdMobilenetv1Options())   // ← diperbaiki
-        .withFaceLandmarks()
-        .withFaceDescriptors();
+     // const detections = await faceapi
+       // .detectAllFaces(video, new faceapi.SsdMobilenetv1Options())   // ← diperbaiki
+       // .withFaceLandmarks()
+      //  .withFaceDescriptors();
 
+
+
+const detections = await faceapi
+  .detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 }))
+  .withFaceLandmarks()
+  .withFaceDescriptors();
+
+
+
+      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       detections.forEach(d => {
