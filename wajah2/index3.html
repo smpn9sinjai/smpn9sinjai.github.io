@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Absensi Wajah</title>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <style>
+    video { width: 420px; border:1px solid black; }
+    canvas { position:absolute; left:0; top:0; }
+  </style>
+</head>
+<body>
+  <h3>Absensi Wajah Otomatis</h3>
+
+  <div style="position:relative;">
+    <video id="cam" autoplay muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="log" style="margin-top:20px; font-size:18px; color:green;"></div>
+
+<script>
+const video = document.getElementById("cam");
+const canvas = document.getElementById("canvas");
+const log = document.getElementById("log");
+
+/* -----------------------------
+   SIMPAN ABSENSI
+------------------------------*/
+function absen(nama) {
+  const key = "absen_" + nama;
+
+  // jika sudah absen, jangan dua kali
+  if (localStorage.getItem(key)) return;
+
+  // simpan ke localStorage
+  localStorage.setItem(key, new Date().toLocaleString());
+
+  // tampilkan pesan
+  log.innerHTML = "✔ Absensi berhasil untuk: <b>" + nama + "</b>";
+  
+  console.log("ABSEN:", nama);
+}
+
+/* -----------------------------
+   MULAI DETEKSI WAJAH
+------------------------------*/
+async function start() {
+  await faceapi.nets.tinyFaceDetector.loadFromUri("models");
+  await faceapi.nets.faceRecognitionNet.loadFromUri("models");
+  await faceapi.nets.faceLandmark68Net.loadFromUri("models");
+
+  const data = await fetch("faces.json").then(r => r.json());
+  
+  const labeled = data.map(p =>
+    new faceapi.LabeledFaceDescriptors(
+      p.name,
+      p.descriptors.map(d => new Float32Array(d))
+    )
+  );
+
+  const matcher = new faceapi.FaceMatcher(labeled, 0.45);
+
+  navigator.mediaDevices.getUserMedia({ video:true })
+    .then(stream => video.srcObject = stream);
+
+  video.addEventListener("playing", () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    setInterval(async () => {
+
+      const detections = await faceapi.detectAllFaces(
+        video, new faceapi.TinyFaceDetectorOptions()
+      ).withFaceLandmarks().withFaceDescriptors();
+
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      detections.forEach(det => {
+        const best = matcher.findBestMatch(det.descriptor);
+        const box = det.detection.box;
+
+        // gambar kotak
+        ctx.strokeStyle = "lime";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+        // tampilkan nama
+        ctx.fillStyle = "lime";
+        ctx.font = "18px Arial";
+        ctx.fillText(best.toString(), box.x + 5, box.y - 10);
+
+        // -----------------------------
+        // OTOMATIS ABSENSI JIKA DIKENALI
+        // -----------------------------
+        if (best.label !== "unknown") {
+          absen(best.label);
+        }
+
+      });
+
+    }, 300);
+
+  });
+}
+
+start();
+</script>
+</body>
+</html>
