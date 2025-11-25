@@ -2,141 +2,137 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Absensi Wajah Anti Foto</title>
+  <title>Absensi Wajah Aman</title>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
   <style>
-    video { width: 420px; border:1px solid black; }
+    body { font-family: Arial; text-align: center; }
+    video { width: 420px; border:2px solid black; border-radius: 8px; }
     canvas { position:absolute; left:0; top:0; }
+    #status { font-size:22px; margin-top:12px; font-weight:bold; }
   </style>
 </head>
 <body>
-<h3>Absensi Wajah — Verifikasi Gerak Kepala</h3>
 
-<div style="position:relative;">
-  <video id="cam" autoplay muted></video>
-  <canvas id="canvas"></canvas>
-</div>
+  <h2>Absensi Wajah – Anti Foto</h2>
 
-<div id="log" style="margin-top:20px; font-size:18px; color:green;"></div>
+  <div style="position:relative; display:inline-block;">
+    <video id="cam" autoplay muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div id="status">Mempersiapkan kamera...</div>
 
 <script>
 const video = document.getElementById("cam");
 const canvas = document.getElementById("canvas");
-const log = document.getElementById("log");
+const status = document.getElementById("status");
 
 let matcher;
-let absensi = {};        // anti absen ulang
-let posisi_awal = null;  // untuk deteksi arah kepala
-let waktu_awal = null;   // time detection 2 detik batas
-let sedang_verifikasi = false;
+let mouthHistory = [];
+let recognizedUser = "";
+let livenessPassed = false;
 
-/* -----------------------------
-   SIMPAN ABSENSI
-------------------------------*/
+/* ------------------------
+    Hitung jarak bibir
+-------------------------*/
+function mouthDistance(landmarks) {
+  const mouth = landmarks.getMouth();
+  const upper = mouth[13];
+  const lower = mouth[14];
+  return Math.abs(lower.y - upper.y);
+}
+
+/* ------------------------
+    Simpan Absensi
+-------------------------*/
 function absen(nama) {
-  if (absensi[nama]) return;
-  absensi[nama] = true;
-  log.innerHTML = "✔ Absensi berhasil untuk: <b>" + nama + "</b>";
-  console.log("ABSEN:", nama);
+  const key = "absen_" + nama;
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, new Date().toLocaleString());
+  status.innerHTML = "✔ Absensi berhasil untuk: <b>" + nama + "</b>";
+  console.log("ABSEN UNTUK:", nama);
 }
 
-/* -----------------------------
-   DETEKSI LOOP
-------------------------------*/
-async function scan() {
-  const detections = await faceapi
-    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-    .withFaceLandmarks()
-    .withFaceDescriptors();
-
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  detections.forEach(det => {
-    const box = det.detection.box;
-    const best = matcher.findBestMatch(det.descriptor);
-
-    // gambar kotak
-    ctx.strokeStyle = "lime";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-    // nama
-    ctx.fillStyle = "lime";
-    ctx.font = "18px Arial";
-    ctx.fillText(best.label, box.x + 5, box.y - 10);
-
-    // hanya jika orang dikenali
-    if (best.label !== "unknown") {
-      deteksiGerakKepala(best.label, det);
-    }
-  });
-
-  requestAnimationFrame(scan);
-}
-
-/* -----------------------------
-   DETEKSI GERAK KEPALA
-------------------------------*/
-function deteksiGerakKepala(nama, det) {
-  const yaw = det.landmarks._positions[30].x; // titik hidung X
-
-  // mulai verifikasi
-  if (!sedang_verifikasi) {
-    posisi_awal = yaw;
-    waktu_awal = Date.now();
-    sedang_verifikasi = true;
-    log.innerHTML = "↔ Silahkan gerakkan kepala ke KIRI lalu ke KANAN";
-    return;
-  }
-
-  // batasi waktu 2 detik
-  if (Date.now() - waktu_awal > 2000) {
-    sedang_verifikasi = false;
-    log.innerHTML = "❌ Verifikasi gagal — ulangi gerakan kepala";
-    return;
-  }
-
-  const pergeseran = yaw - posisi_awal;
-
-  // jika bergerak cukup jauh (anti foto)
-  if (Math.abs(pergeseran) > 20) {
-    sedang_verifikasi = false;
-    absen(nama);
-  }
-}
-
-/* -----------------------------
-   MULAI SISTEM
-------------------------------*/
+/* ------------------------
+    Mulai Sistem
+-------------------------*/
 async function start() {
-  log.innerHTML = "⏳ Loading model...";
-  await Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri("models"),
-    faceapi.nets.faceLandmark68Net.loadFromUri("models"),
-    faceapi.nets.faceRecognitionNet.loadFromUri("models")
-  ]);
+  status.innerText = "Memuat model AI...";
+  await faceapi.nets.tinyFaceDetector.loadFromUri("models");
+  await faceapi.nets.faceLandmark68Net.loadFromUri("models");
+  await faceapi.nets.faceRecognitionNet.loadFromUri("models");
 
-  log.innerHTML = "⏳ Loading data wajah..";
   const data = await fetch("faces.json").then(r => r.json());
-  const labeled = data.map(p => new faceapi.LabeledFaceDescriptors(
-    p.name,
-    p.descriptors.map(d => new Float32Array(d))
-  ));
-  matcher = new faceapi.FaceMatcher(labeled, 0.45);
+  const labeled = data.map(p =>
+    new faceapi.LabeledFaceDescriptors(
+      p.name,
+      p.descriptors.map(d => new Float32Array(d))
+    )
+  );
 
-  log.innerHTML = "📷 Mengaktifkan kamera...";
-  navigator.mediaDevices.getUserMedia({ video:{ width:720, height:480 } })
-    .then(stream => {
-      video.srcObject = stream;
-      video.onplaying = () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        log.innerHTML = "🔥 Sistem siap — tampilkan wajah untuk absensi";
-        scan();
-      };
-    });
+  matcher = new faceapi.FaceMatcher(labeled, 0.45);
+  status.innerText = "Mengaktifkan kamera...";
+
+  navigator.mediaDevices.getUserMedia({ video:true })
+    .then(stream => video.srcObject = stream);
 }
+
+video.addEventListener("playing", () => {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  status.innerText = "Arahkan wajah ke kamera...";
+
+  setInterval(async () => {
+    const detections = await faceapi.detectAllFaces(
+      video, new faceapi.TinyFaceDetectorOptions()
+    ).withFaceLandmarks().withFaceDescriptors();
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    detections.forEach(det => {
+      const box = det.detection.box;
+      const best = matcher.findBestMatch(det.descriptor);
+      const landmarks = det.landmarks;
+
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+      ctx.fillStyle = "lime";
+      ctx.font = "18px Arial";
+      ctx.fillText(best.label, box.x + 5, box.y - 10);
+
+      if (best.label === "unknown") {
+        status.innerText = "Wajah tidak dikenal!";
+        return;
+      }
+
+      // Jika nama pertama kali terdeteksi
+      if (!recognizedUser) {
+        recognizedUser = best.label;
+        status.innerText = "Halo " + recognizedUser + ", gerakkan mulut seperti sedang bicara...";
+      }
+
+      // Deteksi gerak mulut
+      const d = mouthDistance(landmarks);
+      mouthHistory.push(d);
+      if (mouthHistory.length > 15) mouthHistory.shift();
+
+      const maxD = Math.max(...mouthHistory);
+      const minD = Math.min(...mouthHistory);
+
+      if (maxD - minD > 11) livenessPassed = true;
+
+      if (recognizedUser && livenessPassed) {
+        absen(recognizedUser);
+      }
+    });
+
+  }, 250);
+
+});
 
 start();
 </script>
