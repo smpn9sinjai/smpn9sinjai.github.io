@@ -1,140 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Absensi Wajah Aman</title>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<meta charset="UTF-8">
+<title>Generator faces.json dari Kamera</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
-  <style>
-    body { font-family: Arial; text-align: center; }
-    video { width: 420px; border:2px solid black; border-radius: 8px; }
-    canvas { position:absolute; left:0; top:0; }
-    #status { font-size:22px; margin-top:12px; font-weight:bold; }
-  </style>
+<style>
+  body { font-family: Arial; padding:20px; }
+  video { width:300px; border:2px solid #444; }
+  canvas { display:none; }
+  #list img { width:100px; margin:5px; border:1px solid #999; }
+</style>
 </head>
 <body>
 
-  <h2>Absensi Wajah – Anti Foto</h2>
+<h2>Generator faces.json dari Kamera</h2>
 
-  <div style="position:relative; display:inline-block;">
-    <video id="cam" autoplay muted></video>
-    <canvas id="canvas"></canvas>
-  </div>
+<label>Nama Siswa:</label>
+<input type="text" id="nama" style="font-size:16px"><br><br>
 
-  <div id="status">Mempersiapkan kamera...</div>
+<video id="cam" autoplay muted></video><br>
+<button onclick="capture()">📸 Capture Wajah</button>
+<button onclick="simpan()">💾 Simpan Ke faces.json</button>
+
+<h3>Foto yang tersimpan untuk siswa ini:</h3>
+<div id="list"></div>
+
+<hr>
+<h3>Data JSON:</h3>
+<pre id="output" style="background:#eee;padding:10px;white-space:pre-wrap;"></pre>
+
+<button onclick="downloadJSON()">⬇ Download faces.json</button>
+
+<canvas id="canvas"></canvas>
 
 <script>
-const video = document.getElementById("cam");
-const canvas = document.getElementById("canvas");
-const status = document.getElementById("status");
+let video = document.getElementById("cam");
+let canvas = document.getElementById("canvas");
+let list = document.getElementById("list");
+let output = document.getElementById("output");
 
-let matcher;
-let mouthHistory = [];
-let recognizedUser = "";
-let livenessPassed = false;
+let semuaData = [];         // hasil akhir semua siswa
+let fotoSiswa = [];         // kumpulan descriptor 1 siswa
 
-/* ------------------------
-    Hitung jarak bibir
--------------------------*/
-function mouthDistance(landmarks) {
-  const mouth = landmarks.getMouth();
-  const upper = mouth[13];
-  const lower = mouth[14];
-  return Math.abs(lower.y - upper.y);
-}
-
-/* ------------------------
-    Simpan Absensi
--------------------------*/
-function absen(nama) {
-  const key = "absen_" + nama;
-  if (localStorage.getItem(key)) return;
-  localStorage.setItem(key, new Date().toLocaleString());
-  status.innerHTML = "✔ Absensi berhasil untuk: <b>" + nama + "</b>";
-  console.log("ABSEN UNTUK:", nama);
-}
-
-/* ------------------------
-    Mulai Sistem
--------------------------*/
-async function start() {
-  status.innerText = "Memuat model AI...";
-  await faceapi.nets.tinyFaceDetector.loadFromUri("models");
-  await faceapi.nets.faceLandmark68Net.loadFromUri("models");
-  await faceapi.nets.faceRecognitionNet.loadFromUri("models");
-
-  const data = await fetch("faces.json").then(r => r.json());
-  const labeled = data.map(p =>
-    new faceapi.LabeledFaceDescriptors(
-      p.name,
-      p.descriptors.map(d => new Float32Array(d))
-    )
-  );
-
-  matcher = new faceapi.FaceMatcher(labeled, 0.45);
-  status.innerText = "Mengaktifkan kamera...";
-
-  navigator.mediaDevices.getUserMedia({ video:true })
-    .then(stream => video.srcObject = stream);
-}
-
-video.addEventListener("playing", () => {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  status.innerText = "Arahkan wajah ke kamera...";
-
-  setInterval(async () => {
-    const detections = await faceapi.detectAllFaces(
-      video, new faceapi.TinyFaceDetectorOptions()
-    ).withFaceLandmarks().withFaceDescriptors();
-
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    detections.forEach(det => {
-      const box = det.detection.box;
-      const best = matcher.findBestMatch(det.descriptor);
-      const landmarks = det.landmarks;
-
-      ctx.strokeStyle = "lime";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-      ctx.fillStyle = "lime";
-      ctx.font = "18px Arial";
-      ctx.fillText(best.label, box.x + 5, box.y - 10);
-
-      if (best.label === "unknown") {
-        status.innerText = "Wajah tidak dikenal!";
-        return;
-      }
-
-      // Jika nama pertama kali terdeteksi
-      if (!recognizedUser) {
-        recognizedUser = best.label;
-        status.innerText = "Halo " + recognizedUser + ", gerakkan mulut seperti sedang bicara...";
-      }
-
-      // Deteksi gerak mulut
-      const d = mouthDistance(landmarks);
-      mouthHistory.push(d);
-      if (mouthHistory.length > 15) mouthHistory.shift();
-
-      const maxD = Math.max(...mouthHistory);
-      const minD = Math.min(...mouthHistory);
-
-      if (maxD - minD > 11) livenessPassed = true;
-
-      if (recognizedUser && livenessPassed) {
-        absen(recognizedUser);
-      }
-    });
-
-  }, 250);
-
+/* ------------------------------
+   START CAMERA
+--------------------------------*/
+navigator.mediaDevices.getUserMedia({ video:true }).then(stream=>{
+  video.srcObject = stream;
 });
 
-start();
+/* ------------------------------
+   LOAD MODEL
+--------------------------------*/
+async function loadModels() {
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri("models"),
+    faceapi.nets.faceLandmark68Net.loadFromUri("models"),
+    faceapi.nets.faceRecognitionNet.loadFromUri("models")
+  ]);
+}
+loadModels();
+
+/* ------------------------------
+   CAPTURE WAJAH
+--------------------------------*/
+async function capture() {
+  const nama = document.getElementById("nama").value.trim();
+  if (!nama) return alert("Isi nama siswa dulu!");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  // tampilkan foto kecil
+  const imgUrl = canvas.toDataURL();
+  const img = document.createElement("img");
+  img.src = imgUrl;
+  list.appendChild(img);
+
+  // deteksi wajah
+  const det = await faceapi
+    .detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+  if (!det) {
+    alert("Wajah tidak terdeteksi! Coba lagi.");
+    return;
+  }
+
+  // bulatkan descriptor 2 angka
+  const rounded = Array.from(det.descriptor).map(n => Number(n.toFixed(2)));
+
+  fotoSiswa.push(rounded);
+  alert("Foto wajah tersimpan!");
+}
+
+/* ------------------------------
+   SIMPAN SATU SISWA
+--------------------------------*/
+function simpan() {
+  const nama = document.getElementById("nama").value.trim();
+  if (!nama) return alert("Isi nama siswa dulu!");
+  if (fotoSiswa.length === 0) return alert("Ambil minimal 1 foto dulu!");
+
+  semuaData.push({
+    name: nama,
+    descriptors: fotoSiswa
+  });
+
+  output.textContent = JSON.stringify(semuaData, null, 2);
+
+  alert("Siswa tersimpan! Data siap ditambah siswa berikutnya.");
+  
+  // reset untuk siswa berikutnya
+  fotoSiswa = [];
+  list.innerHTML = "";
+  document.getElementById("nama").value = "";
+}
+
+/* ------------------------------
+   DOWNLOAD JSON
+--------------------------------*/
+function downloadJSON() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(semuaData));
+  const a = document.createElement("a");
+  a.href = dataStr;
+  a.download = "faces.json";
+  a.click();
+}
 </script>
+
 </body>
 </html>
