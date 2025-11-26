@@ -86,7 +86,8 @@ async function start() {
     p.name,
     p.descriptors.map(d => new Float32Array(d))
   ));
-  matcher = new faceapi.FaceMatcher(labeled, 0.45);
+  matcher = new faceapi.FaceMatcher(labeled, 0.7);
+ // matcher = new faceapi.FaceMatcher(labeled, 0.45);
   log.innerHTML = "📷 Mengaktifkan kamera...";
 
   navigator.mediaDevices.getUserMedia({ video: { width:720, height:480 } })
