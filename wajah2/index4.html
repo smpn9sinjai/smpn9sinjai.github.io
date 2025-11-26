@@ -58,9 +58,18 @@ async function scan() {
   //  ctx.strokeRect(box.x, box.y, box.width, box.height);
 
     // tulis nama
-    ctx.fillStyle = "lime";
-    ctx.font = "25px Arial";
-    ctx.fillText(best.label, box.x + 5, box.y - 10);
+   ctx.fillStyle = "lime";
+ctx.font = "22px Arial";
+
+// Pisahkan nama dan NIS
+const [nama, nis] = best.label.split(" | ");
+
+// Baris 1 → Nama
+ctx.fillText(nama, box.x + 5, box.y - 15);
+
+// Baris 2 → NIS
+ctx.fillText("NIS: " + nis, box.x + 5, box.y + 10);
+
 
     // absen otomatis
     if (best.label !== "unknown") absen(best.label);
@@ -82,10 +91,15 @@ async function start() {
   log.innerHTML = "⏳ Loading data wajah...";
 
   const data = await fetch("faces.json").then(r => r.json());
-  const labeled = data.map(p => new faceapi.LabeledFaceDescriptors(
-    p.name,
+  const labeled = data.map(p => {
+  // buat label: "Muhlis | 0003"
+  const labelGabungan = p.name + " | " + p.nis;
+
+  return new faceapi.LabeledFaceDescriptors(
+    labelGabungan,
     p.descriptors.map(d => new Float32Array(d))
-  ));
+  );
+});
   matcher = new faceapi.FaceMatcher(labeled, 0.7);
  // matcher = new faceapi.FaceMatcher(labeled, 0.45);
   log.innerHTML = "📷 Mengaktifkan kamera...";
