@@ -53,13 +53,13 @@ async function scan() {
     const best = matcher.findBestMatch(det.descriptor);
 
     // gambar kotak
-    ctx.strokeStyle = "lime";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
+   // ctx.strokeStyle = "lime";
+  //  ctx.lineWidth = 3;
+  //  ctx.strokeRect(box.x, box.y, box.width, box.height);
 
     // tulis nama
     ctx.fillStyle = "lime";
-    ctx.font = "18px Arial";
+    ctx.font = "25px Arial";
     ctx.fillText(best.label, box.x + 5, box.y - 10);
 
     // absen otomatis
