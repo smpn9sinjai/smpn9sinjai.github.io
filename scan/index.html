@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scan Judul Buku</title>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+  body { font-family: Arial; padding: 10px; }
+  video { width:100%; max-width:420px; border:1px solid #333; border-radius:10px; }
+  button { margin-top:10px; padding:10px; width:100%; font-size:18px; }
+  #judul { margin-top:15px; background:#eef2f5; padding:10px; border-radius:8px; font-size:20px; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h2>Scan Judul Buku</h2>
+<p>Arahkan kamera ke cover buku lalu tekan tombol scan.</p>
+
+<video id="video" autoplay playsinline></video>
+<button onclick="scanJudul()">Scan Judul Buku</button>
+
+<div id="judul">Belum ada hasil.</div>
+
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const outJudul = document.getElementById('judul');
+
+// Nyalakan kamera belakang
+async function startCam() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+    video.srcObject = stream;
+  } catch (e) {
+    alert("Kamera tidak bisa diakses: " + e);
+  }
+}
+startCam();
+
+// Ambil teks yang paling mirip “judul buku”
+function pilihJudul(teks) {
+  let baris = teks.split("\n");
+  baris = baris
+    .map(b => b.trim())
+    .filter(b => b.length > 3); // buang baris kosong
+
+  // pilih baris terpanjang → biasanya judul
+  let judul = baris.sort((a, b) => b.length - a.length)[0] || "Tidak ditemukan";
+
+  return judul;
+}
+
+async function scanJudul() {
+  outJudul.textContent = "Memproses...";
+
+  // ambil gambar dari video
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+
+  const dataURL = canvas.toDataURL("image/png");
+
+  // OCR
+  const { data: { text } } = await Tesseract.recognize(
+    dataURL,
+    'eng+ind',
+    { logger: m => console.log(m) }
+  );
+
+  let judul = pilihJudul(text);
+  outJudul.textContent = judul;
+}
+</script>
+
+</body>
+</html>
