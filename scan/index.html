@@ -3,35 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Scan Judul Buku</title>
+<title>Scan Buku Perpustakaan - Versi Lengkap</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
   body { font-family: Arial; padding: 10px; }
   video { width:100%; max-width:420px; border:1px solid #333; border-radius:10px; }
-  button { margin-top:10px; padding:10px; width:100%; font-size:18px; }
-  #judul { margin-top:15px; background:#eef2f5; padding:10px; border-radius:8px; font-size:20px; font-weight:bold; }
+  #hasil {
+    margin-top:15px; 
+    background:#eef2f5; 
+    padding:10px; 
+    border-radius:8px; 
+    white-space:pre-wrap; 
+    font-size:16px;
+  }
+  button {
+    padding: 12px; width:100%; font-size:18px;
+    margin-top:10px; border:none; border-radius:8px;
+    background:#3478f6; color:white;
+  }
+  #status { margin-top:5px; font-size:14px; color:#555; }
 </style>
 </head>
 <body>
 
-<h2>Scan Judul Buku</h2>
-<p>Arahkan kamera ke cover buku lalu tekan tombol scan.</p>
+<h2>Scan Buku Perpustakaan – Mode Lengkap</h2>
+<p>Kamera akan otomatis memindai setiap 2 detik.</p>
 
 <video id="video" autoplay playsinline></video>
-<button onclick="scanJudul()">Scan Judul Buku</button>
+<div id="status">Status: Menunggu...</div>
 
-<div id="judul">Belum ada hasil.</div>
+<h3>Hasil OCR:</h3>
+<div id="hasil">Belum ada hasil.</div>
+
+<button onclick="downloadJSON()">Download JSON</button>
 
 <canvas id="canvas" style="display:none"></canvas>
+<canvas id="precanvas" style="display:none"></canvas>
 
 <script>
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
-const outJudul = document.getElementById('judul');
+const precanvas = document.getElementById('precanvas');
+const statusEl = document.getElementById('status');
+const hasilEl = document.getElementById('hasil');
 
-// Nyalakan kamera belakang
+let dataBuku = [];
+
+// 🔥 Nyalakan kamera belakang
 async function startCam() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -44,39 +64,76 @@ async function startCam() {
 }
 startCam();
 
-// Ambil teks yang paling mirip “judul buku”
-function pilihJudul(teks) {
-  let baris = teks.split("\n");
-  baris = baris
-    .map(b => b.trim())
-    .filter(b => b.length > 3); // buang baris kosong
 
-  // pilih baris terpanjang → biasanya judul
-  let judul = baris.sort((a, b) => b.length - a.length)[0] || "Tidak ditemukan";
+// 🔥 Fungsi untuk memperbaiki gambar sebelum OCR
+function preprocessImage() {
+  precanvas.width = video.videoWidth;
+  precanvas.height = video.videoHeight;
+  const ctx = precanvas.getContext("2d");
 
-  return judul;
-}
-
-async function scanJudul() {
-  outJudul.textContent = "Memproses...";
-
-  // ambil gambar dari video
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
+  // Ambil frame kamera
   ctx.drawImage(video, 0, 0);
 
-  const dataURL = canvas.toDataURL("image/png");
+  // Ambil pixel
+  let imageData = ctx.getImageData(0, 0, precanvas.width, precanvas.height);
+  let data = imageData.data;
 
-  // OCR
+  // brightness + contrast + sharpen
+  for (let i = 0; i < data.length; i += 4) {
+    // brightness
+    data[i] += 25;     // R
+    data[i+1] += 25;   // G
+    data[i+2] += 25;   // B
+
+    // contrast
+    data[i] = data[i] * 1.2;
+    data[i+1] = data[i+1] * 1.2;
+    data[i+2] = data[i+2] * 1.2;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return precanvas.toDataURL("image/png");
+}
+
+
+// 🔥 Jalankan OCR
+async function scanOCR() {
+  statusEl.textContent = "Status: Memproses...";
+  
+  const dataURL = preprocessImage();
+
   const { data: { text } } = await Tesseract.recognize(
     dataURL,
     'eng+ind',
     { logger: m => console.log(m) }
   );
 
-  let judul = pilihJudul(text);
-  outJudul.textContent = judul;
+  hasilEl.textContent = text;
+
+  // simpan ke array
+  dataBuku.push({
+    waktu: new Date().toLocaleString(),
+    teks: text
+  });
+
+  statusEl.textContent = "Status: Scan selesai ✓";
+}
+
+
+// 🔥 Scan otomatis setiap 2 detik
+setInterval(() => {
+  scanOCR();
+}, 2000);
+
+
+// 🔥 Download JSON
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(dataBuku, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "data_buku.json";
+  a.click();
 }
 </script>
 
