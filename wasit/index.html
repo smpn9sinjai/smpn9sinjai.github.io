@@ -11,15 +11,16 @@
     label{display:block;margin:8px 0 4px;font-weight:600}
     select,input[type=number]{padding:6px;border:1px solid #ccd;border-radius:6px}
     .scores{display:flex;gap:12px;align-items:center;margin-top:10px}
-    .team{flex:1;border:1px dashed #e0e0e0;padding:10px;border-radius:8px;text-align:center}
+    .team{flex:1;border:1px dashed black;padding:10px;border-radius:8px;text-align:center}
     .score-big{font-size:32px;font-weight:700;margin:6px 0}
-    .btn{padding:8px 12px;border-radius:8px;border:0;background:#1976d2;color:#fff;cursor:pointer;margin:4px}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:#1976d2;color:#fff;cursor:pointer;margin:20px;font-size:25px}
     .btn.secondary{background:#6c757d}
     .sets-list{margin-top:10px}
     .set-row{display:flex;justify-content:space-between;padding:6px 8px;border-radius:6px;background:#fafafa;margin:6px 0}
     .result{margin-top:12px;padding:10px;border-radius:8px;background:#e8f5e9;color:#0b6623;font-weight:700}
     .warn{background:#fff3cd;color:#7a4b00}
     small{color:#666}
+	#scoreA,#scoreB{font-size:50px}
   </style>
 </head>
 <body>
@@ -74,6 +75,7 @@
    const ulb= document.getElementById('ul');
 
   function updateDisplays(){
+   
     scoreAEl.textContent = scoreA;
     scoreBEl.textContent = scoreB;
     renderSets();
@@ -119,28 +121,11 @@ ulb.onclick = function (){updateDisplays()}
   }
   
   addA.addEventListener('click', ()=>{ scoreA++;apa=0; updateDisplays(); });
-  addB.addEventListener('click', ()=>{ scoreB++; apa=1 ;updateDisplays();});
+  addB.addEventListener('click', ()=>{ scoreB++;apa=1; updateDisplays(); });
   subA.addEventListener('click', ()=>{ if(scoreA>0) scoreA--; apa=0;updateDisplays(); });
   subB.addEventListener('click', ()=>{ if(scoreB>0) scoreB--; apa=1;updateDisplays(); });
 
-  endSet.addEventListener('click', ()=>{
-    // validate
-    if(scoreA === scoreB){
-      alert('Skor set seri — tidak bisa disimpan sebagai set pemenang.');
-      return;
-    }
-    if(!validateSet(scoreA, scoreB)){
-      // give informative message but allow user to force-save
-      if(!confirm('Skor ini tampak tidak valid menurut aturan yang dipilih (belum mencapai target atau tidak ada selisih 2). Simpan tetap?')) {
-        return;
-      }
-    }
-    sets.push({a: scoreA, b: scoreB});
-    // reset current set scores
-    scoreA = 0; scoreB = 0;
-    updateDisplays();
-  });
-
+   
   
   
 
