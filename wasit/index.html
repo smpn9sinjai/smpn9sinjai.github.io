@@ -118,8 +118,8 @@ ulb.onclick = function (){updateDisplays()}
     return false;
   }
   
-  addA.addEventListener('click', ()=>{ scoreA++; updateDisplays();apa=0 });
-  addB.addEventListener('click', ()=>{ scoreB++; updateDisplays();apa=1 });
+  addA.addEventListener('click', ()=>{ scoreA++;apa=0; updateDisplays(); });
+  addB.addEventListener('click', ()=>{ scoreB++; apa=1 ;updateDisplays();});
   subA.addEventListener('click', ()=>{ if(scoreA>0) scoreA--; apa=0;updateDisplays(); });
   subB.addEventListener('click', ()=>{ if(scoreB>0) scoreB--; apa=1;updateDisplays(); });
 
