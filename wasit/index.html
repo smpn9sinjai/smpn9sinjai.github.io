@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>Kalkulator Poin — Bulutangkis & Sepak Takraw</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;max-width:900px;margin:24px auto;padding:16px;color:#111}
+    h1{margin:0 0 12px;font-size:20px}
+    .card{border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+    label{display:block;margin:8px 0 4px;font-weight:600}
+    select,input[type=number]{padding:6px;border:1px solid #ccd;border-radius:6px}
+    .scores{display:flex;gap:12px;align-items:center;margin-top:10px}
+    .team{flex:1;border:1px dashed #e0e0e0;padding:10px;border-radius:8px;text-align:center}
+    .score-big{font-size:32px;font-weight:700;margin:6px 0}
+    .btn{padding:8px 12px;border-radius:8px;border:0;background:#1976d2;color:#fff;cursor:pointer;margin:4px}
+    .btn.secondary{background:#6c757d}
+    .sets-list{margin-top:10px}
+    .set-row{display:flex;justify-content:space-between;padding:6px 8px;border-radius:6px;background:#fafafa;margin:6px 0}
+    .result{margin-top:12px;padding:10px;border-radius:8px;background:#e8f5e9;color:#0b6623;font-weight:700}
+    .warn{background:#fff3cd;color:#7a4b00}
+    small{color:#666}
+  </style>
+</head>
+<body>
+ 
+   <audio id="sond" src="peluit.mp3"></audio>
+
+
+   
+
+    <div class="scores">
+      <div class="team">
+        <div id="scoreA" class="score-big">0</div>
+        <button class="btn" id="addA">+1</button>
+        <button class="btn secondary" id="subA">-1</button>
+      </div>
+      <div style="width:12px"></div>
+      <div class="team">
+        <div id="scoreB" class="score-big">0</div>
+        <button class="btn" id="addB">+1</button>
+        <button class="btn secondary" id="subB">-1</button>
+      </div>
+    </div>
+<center>
+    <div style="margin-top:12px">
+      <button class="btn secondary" id="ul">Ulangi Suara</button>
+	  <button onclick="peluit()" class="btn secondary" id="ul">Peluit</button>
+	  <br><br><br><br>
+      <button class="btn secondary" id="resetSets">Reset Semua</button>
+    </div>
+</center>
+    <div class="sets-list" id="setsList"></div>
+
+    
+<script>
+  // State
+  let apa=0;
+  let scoreA = 0, scoreB = 0;
+  let sets = []; // array of {a, b}
+  const sportEl = document.getElementById('sport');
+  const systemEl = document.getElementById('system');
+  const scoreAEl = document.getElementById('scoreA');
+  const scoreBEl = document.getElementById('scoreB');
+  const addA = document.getElementById('addA');
+  const addB = document.getElementById('addB');
+  const subA = document.getElementById('subA');
+  const subB = document.getElementById('subB');
+  const endSet = document.getElementById('endSet');
+  const setsList = document.getElementById('setsList');
+  const decideMatch = document.getElementById('decideMatch');
+  const matchResult = document.getElementById('matchResult');
+  const resetSets = document.getElementById('resetSets');
+   const ulb= document.getElementById('ul');
+
+  function updateDisplays(){
+    scoreAEl.textContent = scoreA;
+    scoreBEl.textContent = scoreB;
+    renderSets();
+	if (apa==0){bicara(scoreA +'. '+scoreB+'.') }
+	else {bicara(scoreB +'. '+scoreA+'.') }
+	
+  }
+resetSets.onclick = function () {
+ let mm=confirm("Yakin akan di reset ?")
+  if (mm){
+    scoreA = 0;
+    scoreB = 0;
+    updateDisplays();
+	}
+};
+
+ulb.onclick = function (){updateDisplays()}
+  function renderSets(){
+    setsList.innerHTML = '';
+    sets.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      row.innerHTML = `<div>Set ${i+1}</div><div>${document.getElementById('teamAname').value} ${s.a} — ${s.b} ${document.getElementById('teamBname').value}</div>`;
+      setsList.appendChild(row);
+    });
+  }
+
+  function validateSet(a,b){
+    const system = parseInt(systemEl.value,10);
+    // winner must reach target OR more (deuce)
+    // general rule: must have at least target points OR more with 2-point lead; apply cap
+    const target = system;
+    const cap = (sportEl.value === 'badminton')? 30 : (system === 15 ? 15 : 25); // sepak takraw cap approximated to 25 for display if using 21
+    function isValidWinner(x,y){
+      if(x < target) return false;
+      // if reached cap
+      if(x >= cap && x === cap && x > y) return true;
+      if(x >= target && x - y >= 2) return true;
+      return false;
+    }
+    if(isValidWinner(a,b) || isValidWinner(b,a)) return true;
+    return false;
+  }
+  
+  addA.addEventListener('click', ()=>{ scoreA++; updateDisplays();apa=0 });
+  addB.addEventListener('click', ()=>{ scoreB++; updateDisplays();apa=1 });
+  subA.addEventListener('click', ()=>{ if(scoreA>0) scoreA--; apa=0;updateDisplays(); });
+  subB.addEventListener('click', ()=>{ if(scoreB>0) scoreB--; apa=1;updateDisplays(); });
+
+  endSet.addEventListener('click', ()=>{
+    // validate
+    if(scoreA === scoreB){
+      alert('Skor set seri — tidak bisa disimpan sebagai set pemenang.');
+      return;
+    }
+    if(!validateSet(scoreA, scoreB)){
+      // give informative message but allow user to force-save
+      if(!confirm('Skor ini tampak tidak valid menurut aturan yang dipilih (belum mencapai target atau tidak ada selisih 2). Simpan tetap?')) {
+        return;
+      }
+    }
+    sets.push({a: scoreA, b: scoreB});
+    // reset current set scores
+    scoreA = 0; scoreB = 0;
+    updateDisplays();
+  });
+
+  
+  
+
+  
+  // update system select depending on sport
+  
+
+  // init
+  function bicara(n) {
+   window.speechSynthesis.cancel();
+   
+  // stop any speaking in progress
+  
+   const utterance = new SpeechSynthesisUtterance();
+  utterance.rate = 0.9;
+  utterance.pitch=1.3;
+  utterance.volume = 1.0;
+   utterance.lang = 'id-ID';
+  
+  utterance.text=n;
+  window.speechSynthesis.speak(utterance);
+}
+function peluit(){document.getElementById("sond").play();}
+  
+  updateDisplays();
+  
+</script>
+</body>
+</html>
