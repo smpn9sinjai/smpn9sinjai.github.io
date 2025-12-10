@@ -148,7 +148,7 @@ ulb.onclick = function (){updateDisplays()}
   utterance.text=n;
   window.speechSynthesis.speak(utterance);
 }
-function peluit(){document.getElementById("sond").play();}
+function peluit(){document.getElementById("sond").currentTime = 0;document.getElementById("sond").play();}
   
   updateDisplays();
   
