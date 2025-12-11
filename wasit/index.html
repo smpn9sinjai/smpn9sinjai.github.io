@@ -93,9 +93,8 @@
 resetSets.onclick = function () {
  let mm=confirm("Yakin akan di reset ?")
   if (mm){
-    scoreA = 0;
-    scoreB = 0;
-    updateDisplays();
+   scoreAEl.textContent = 0;
+    scoreBEl.textContent = 0;
 	}
 };
 
