@@ -26,7 +26,7 @@
 <body>
  
    <audio id="sond" src="peluit.mp3"></audio>
-
+ <audio id="sond1" src="/tepuk.mp3"></audio> 
 
    
 
@@ -47,6 +47,7 @@
     <div style="margin-top:12px">
       <button class="btn secondary" id="ul">Ulangi Suara</button>
 	  <button onclick="peluit()" class="btn secondary" id="ul">Peluit</button>
+		 <button onclick="tep()" class="btn secondary" id="ul2">Tepuk</button>
 	  <br><br><br><br>
       <button class="btn secondary" id="resetSets">Reset Semua</button>
     </div>
@@ -149,7 +150,8 @@ ulb.onclick = function (){updateDisplays()}
   window.speechSynthesis.speak(utterance);
 }
 function peluit(){document.getElementById("sond").currentTime = 0;document.getElementById("sond").play();}
-  
+  function tep(){document.getElementById("sond1").currentTime = 0;document.getElementById("sond1").play();}
+
   updateDisplays();
   
 </script>
