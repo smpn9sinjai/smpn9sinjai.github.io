@@ -21,13 +21,18 @@
     .warn{background:#fff3cd;color:#7a4b00}
     small{color:#666}
 	#scoreA,#scoreB{font-size:50px}
+	  input{padding:5px;font-size:19px;}
+	#p1,#p2{padding:5px;font-size:19px}
   </style>
 </head>
 <body>
  
    <audio id="sond" src="peluit.mp3"></audio>
  <audio id="sond1" src="/tepuk.mp3"></audio> 
-
+<center>
+   <input id="t1" type="text"></input><button onclick="pem(1)" id="p1">Pemenang</button><br><br>
+    <input id="t2" type="text"></input><button onclick="pem(2)" id="p2">Pemenang</button><br><br>
+</center>
    
 
     <div class="scores">
@@ -151,7 +156,10 @@ ulb.onclick = function (){updateDisplays()}
 }
 function peluit(){document.getElementById("sond").currentTime = 0;document.getElementById("sond").play();}
   function tep(){document.getElementById("sond1").currentTime = 0;document.getElementById("sond1").play();}
-
+function pem(n){
+if(n==1){bicara("selamat. "+document.getElementById("t1").value+"? jadi pemenang")}
+else{ bicara("selamat. "+document.getElementById("t2").value+"? jadi pemenang")}
+}
   updateDisplays();
   
 </script>
