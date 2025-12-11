@@ -79,14 +79,15 @@
   const matchResult = document.getElementById('matchResult');
   const resetSets = document.getElementById('resetSets');
    const ulb= document.getElementById('ul');
-
+     const is1= document.getElementById('t1')
+	const is2= document.getElementById('t2')
   function updateDisplays(){
    
     scoreAEl.textContent = scoreA;
     scoreBEl.textContent = scoreB;
     renderSets();
-	if (apa==0){bicara(scoreA +'. '+scoreB+'.') }
-	else {bicara(scoreB +'. '+scoreA+'.') }
+	if (apa==0){bicara(is1.value+" "+scoreA +'. '+is2.value+" "+scoreB+'.') }
+	else {bicara(is2.value+" "+scoreB +'. '+is1.value+" "+scoreA+'.') }
 	
   }
 resetSets.onclick = function () {
