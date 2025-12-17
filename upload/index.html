@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Video PORSENIJAR | UPTD MSP Negeri 9 Sinjai</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- FONT KLASIK -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* RESET */
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      min-height:100vh;
+      font-family:'Source Serif 4', serif;
+      background:linear-gradient(160deg,#f7f3ea,#ded4bd);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#2a2a2a;
+    }
+
+    .container{
+      max-width:820px;
+      width:100%;
+      background:#fff;
+      border:4px double #b89b5e;
+      border-radius:18px;
+      padding:50px 45px;
+      box-shadow:0 18px 45px rgba(0,0,0,.25);
+      animation:fadeIn .8s ease;
+    }
+
+    @keyframes fadeIn{
+      from{opacity:0; transform:translateY(20px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .header{
+      text-align:center;
+      margin-bottom:35px;
+    }
+
+    .header h1{
+      font-family:'Playfair Display', serif;
+      font-size:30px;
+      letter-spacing:3px;
+      text-transform:uppercase;
+    }
+
+    .header h2{
+      margin-top:10px;
+      font-size:18px;
+      font-weight:500;
+      color:#6d5827;
+    }
+
+    .ornament{
+      width:140px;
+      height:4px;
+      margin:25px auto;
+      background:linear-gradient(to right,#b89b5e,#e6d39b,#b89b5e);
+      border-radius:2px;
+    }
+
+    .content{
+      text-align:center;
+      line-height:1.9;
+      font-size:16px;
+    }
+
+    .upload-box{
+      margin:40px 0;
+      padding:40px 30px;
+      background:#faf7ef;
+      border:2px dashed #b89b5e;
+      border-radius:14px;
+    }
+
+    .upload-box h3{
+      font-family:'Playfair Display', serif;
+      font-size:20px;
+      margin-bottom:10px;
+      color:#5c4a1c;
+    }
+
+    .btn-upload{
+      display:inline-block;
+      margin-top:26px;
+      padding:16px 48px;
+      font-size:16px;
+      font-weight:600;
+      text-decoration:none;
+      color:#fff;
+      background:linear-gradient(135deg,#7a5b22,#c8ab64);
+      border-radius:50px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);
+      transition:.3s ease;
+    }
+
+    .btn-upload:hover{
+      transform:translateY(-5px);
+      background:linear-gradient(135deg,#6b4f1c,#b39855);
+      box-shadow:0 12px 30px rgba(0,0,0,.45);
+    }
+
+    .note{
+      text-align:left;
+      background:#f1eadb;
+      border-left:6px solid #b89b5e;
+      padding:20px 24px;
+      border-radius:8px;
+      font-size:14px;
+      margin-top:30px;
+    }
+
+    .note ul{
+      margin-top:8px;
+      padding-left:18px;
+    }
+
+    .footer{
+      margin-top:45px;
+      text-align:center;
+      font-size:13px;
+      color:#666;
+    }
+
+    @media(max-width:600px){
+      .container{padding:35px 25px}
+      .header h1{font-size:24px}
+    }
+	
+img{width:10%;border-radius:100px} 
+ @media all and (min-width: 768px) {
+  img {
+    width: 15%;
+    border-radius: 100px;
+  }
+}	
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+	<img src="https://smpn9sinjai.sch.id/doku/smp.jpg"></img>
+      <h1>PORSENIJAR</h1>
+      <h2>UPTD SMP Negeri 9 Sinjai</h2>
+	  <h2>Tahun Ajaran 2025/2026</h2>
+      <div class="ornament"></div>
+    </div>
+
+    <div class="content">
+      <p>
+        Halaman resmi ini digunakan untuk <strong>unggah video hasil kegiatan
+        PORSENIJAR</strong> UPTD SMP Negeri 9 Sinjai.
+      </p>
+
+      <div class="upload-box">
+        <h3>Unggah Video Kegiatan</h3>
+        <p>Dokumentasi lomba atau pertandingan PORSENIJAR.</p>
+
+        <!-- GANTI LINK DENGAN LINK FOLDER GOOGLE DRIVE -->
+        <a href="https://drive.google.com/drive/folders/1BVEIyDnvj_BBO7HEXCJs2h0qxy6WJf4b" target="_blank" class="btn-upload">
+          Upload Video ke Google Drive
+        </a>
+      </div>
+
+      <div class="note">
+        <strong>Ketentuan Upload:</strong>
+        <ul>
+          <li>Nama file: harus mencantumkan nama kelas  contoh Video PORSENIJAR Kelas 7C </li>
+          <li>Format video dianjurkan MP4 (Maximal Durasi 5 Menit)</li>
+          <li>Konten sesuai etika dan aturan sekolah. </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      © 2025 UPTD SMP Negeri 9 Sinjai<br>
+      Panitia PORSENIJAR
+    </div>
+  </div>
+
+</body>
+</html>
