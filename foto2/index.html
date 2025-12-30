@@ -30,7 +30,7 @@ button{margin:5px;padding:8px}
 
 <script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
 
-<script>
+ <script>
 let cropper;
 
 document.getElementById("cameraInput").addEventListener("change", e=>{
@@ -40,25 +40,37 @@ document.getElementById("cameraInput").addEventListener("change", e=>{
   const reader = new FileReader();
   reader.onload = ()=>{
     const img = document.getElementById("image");
+
+    if(cropper){
+      cropper.destroy();
+      cropper = null;
+    }
+
+    img.onload = () => {
+      cropper = new Cropper(img,{
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        responsive: true,
+        zoomable: true,
+        scalable: false,
+        cropBoxResizable: true,
+        guides: true,
+        center: true,
+        highlight: true
+      });
+    };
+
     img.src = reader.result;
-
-    if(cropper) cropper.destroy();
-
-    cropper = new Cropper(img,{
-      viewMode: 1,
-      dragMode: 'move',
-      autoCropArea: 1,
-      responsive: true,
-      zoomable: true,
-      scalable: false,
-      cropBoxResizable: true
-    });
   };
   reader.readAsDataURL(file);
 });
 
 function cropImage(){
-  if(!cropper) return alert("Ambil foto dulu"); 
+  if(!cropper){
+    alert("Ambil foto dulu");
+    return;
+  }
 
   const canvas = cropper.getCroppedCanvas({
     width: 1200,
@@ -66,9 +78,11 @@ function cropImage(){
   });
 
   document.getElementById("preview").innerHTML =
-    `<h4>Hasil Crop</h4><img src="${canvas.toDataURL('image/jpeg',0.85)}">`;
+    `<h4>Hasil Crop</h4>
+     <img src="${canvas.toDataURL('image/jpeg',0.85)}">`;
 }
 </script>
+
 
 </body>
 </html>
