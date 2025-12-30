@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Kamera + Crop Stabil</title>
+<title>Kamera + Crop Tanpa Overlay</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- CropperJS CSS -->
@@ -17,22 +17,24 @@ body {
 h3 {
   margin-bottom: 10px;
 }
+
+/* Container crop */
 #imageContainer {
-  width: 300px;        /* Lebar tampilan crop */
-  height: 400px;       /* Tinggi tampilan crop */
+  width: 300px;          /* lebar crop box */
+  height: 400px;         /* tinggi crop box */
   border: 1px solid #ccc;
   overflow: hidden;
   margin-top: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f5f5f5;
+  background: #fff;       /* putih supaya bersih */
 }
 #image {
   max-width: 100%;
   max-height: 100%;
   display: block;
-  object-fit: contain; /* Tetap proporsional */
+  object-fit: contain;
 }
 button {
   margin-top: 10px;
@@ -47,7 +49,7 @@ button {
 </head>
 <body>
 
-<h3>Ambil Foto & Crop Stabil</h3>
+<h3>Ambil Foto & Crop Tanpa Overlay</h3>
 
 <input type="file" accept="image/*" capture="environment" id="cameraInput">
 
@@ -81,18 +83,17 @@ cameraInput.addEventListener("change", e => {
     }
 
     image.onload = () => {
-      // Inisialisasi Cropper
       cropper = new Cropper(image, {
-        viewMode: 1,
-        autoCropArea: 1,
-        movable: true,
+        viewMode: 1,           // memaksa gambar tetap dalam container
+        autoCropArea: 1,       // crop box mengisi container
+        dragMode: 'move',
         zoomable: true,
-        cropBoxResizable: true,
-        minContainerWidth: 300,
-        minContainerHeight: 400,
-        guides: true,
-        center: true,
-        highlight: true
+        scalable: false,
+        cropBoxResizable: false, // crop box tidak bisa diubah
+        background: false,      // nonaktifkan overlay hitam
+        guides: true,           // garis bantu crop tetap ada
+        highlight: false,       // nonaktifkan highlight
+        center: false           // nonaktifkan garis tengah
       });
     };
 
@@ -106,7 +107,7 @@ function cropImage() {
 
   const canvas = cropper.getCroppedCanvas({
     width: 1200,
-    height: 1600, // menyesuaikan rasio 3:4
+    height: 1600, // rasio 3:4
     imageSmoothingQuality: 'high'
   });
 
