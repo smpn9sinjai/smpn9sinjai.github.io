@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Kamera + Crop Tanpa Overlay</title>
+<title>Kamera + Crop Rapi</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- CropperJS CSS -->
@@ -20,21 +20,21 @@ h3 {
 
 /* Container crop */
 #imageContainer {
-  width: 300px;          /* lebar crop box */
-  height: 400px;         /* tinggi crop box */
+  width: 300px;         /* Lebar crop box */
+  height: 400px;        /* Tinggi crop box */
   border: 1px solid #ccc;
   overflow: hidden;
   margin-top: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fff;       /* putih supaya bersih */
+  background: #fff;      /* bersih, tidak ada overlay gelap */
 }
 #image {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;           /* isi penuh container */
+  height: 100%;          /* isi penuh container */
+  object-fit: cover;     /* gambar memenuhi crop box */
   display: block;
-  object-fit: contain;
 }
 button {
   margin-top: 10px;
@@ -49,7 +49,7 @@ button {
 </head>
 <body>
 
-<h3>Ambil Foto & Crop Tanpa Overlay</h3>
+<h3>Ambil Foto & Crop Rapi</h3>
 
 <input type="file" accept="image/*" capture="environment" id="cameraInput">
 
@@ -83,17 +83,18 @@ cameraInput.addEventListener("change", e => {
     }
 
     image.onload = () => {
+      // Cropper setup
       cropper = new Cropper(image, {
-        viewMode: 1,           // memaksa gambar tetap dalam container
-        autoCropArea: 1,       // crop box mengisi container
-        dragMode: 'move',
-        zoomable: true,
+        viewMode: 1,           // gambar selalu di dalam container
+        dragMode: 'none',      // tidak bisa digeser
+        autoCropArea: 1,       // crop box penuh container
+        zoomable: false,
         scalable: false,
-        cropBoxResizable: false, // crop box tidak bisa diubah
-        background: false,      // nonaktifkan overlay hitam
-        guides: true,           // garis bantu crop tetap ada
-        highlight: false,       // nonaktifkan highlight
-        center: false           // nonaktifkan garis tengah
+        cropBoxResizable: false,
+        background: false,     // hilangkan area overlay gelap
+        guides: true,          // garis bantu crop tetap terlihat
+        highlight: false,      // nonaktifkan highlight
+        center: false          // garis tengah off
       });
     };
 
