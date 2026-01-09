@@ -46,7 +46,10 @@ let fotoSiswa = [];         // kumpulan descriptor 1 siswa
 /* ------------------------------
    START CAMERA
 --------------------------------*/
-navigator.mediaDevices.getUserMedia({ video:true }).then(stream=>{
+navigator.mediaDevices.getUserMedia({ video: {
+    width: { ideal: 720 },
+    height: { ideal: 480 }
+  } }).then(stream=>{
   video.srcObject = stream;
 });
 
