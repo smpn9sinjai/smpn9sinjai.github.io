@@ -1,108 +1,57 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Absensi Wajah Cepat</title>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-  <style>
-    video { width: 420px; border:1px solid black; }
-    canvas { position:absolute; left:0; top:0; }
-  </style>
+<meta charset="UTF-8">
+<title>Absensi Wajah + Kedip Mata</title>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<style>
+body { font-family: Arial; }
+video { width:420px; border:2px solid #333; }
+canvas { position:absolute; top:0; left:0; }
+#log { margin-top:15px; font-size:18px; color:green; }
+</style>
 </head>
+
 <body>
-<h3>Absensi Wajah Otomatis (Optimasi Cepat)</h3>
+
+<h3>Absensi Wajah (Wajib Kedip Mata)</h3>
 
 <div style="position:relative;">
   <video id="cam" autoplay muted></video>
   <canvas id="canvas"></canvas>
 </div>
 
-<div id="log" style="margin-top:20px; font-size:18px; color:green;"></div>
+<div id="log">⏳ Memuat sistem...</div>
 
 <script>
-  let lastEAR = 0;
-let blinked = false;
-
+/* ===============================
+   VAR GLOBAL
+================================ */
 const video = document.getElementById("cam");
 const canvas = document.getElementById("canvas");
 const log = document.getElementById("log");
-let matcher;
-let absensi = {};  // anti absensi berulang
 
-/* -----------------------------
-   SIMPAN ABSENSI
-------------------------------*/
+let matcher;
+let absensi = {};
+
+let eyeCloseCount = 0;
+let blinked = false;
+
+/* ===============================
+   FUNGSI ABSENSI
+================================ */
 function absen(nama) {
-  if (absensi[nama]) return;            // sudah absen? stop
-  absensi[nama] = true;                 // catat sudah absen
-  log.innerHTML = "✔ Absensi: <b>" + nama + "</b> (" + new Date().toLocaleTimeString() + ")";
+  if (absensi[nama]) return;
+  absensi[nama] = true;
+  log.innerHTML = "✔ Absensi BERHASIL: <b>" + nama + "</b>";
   console.log("ABSEN:", nama);
 }
 
-/* -----------------------------
-   DETEKSI LOOP
-------------------------------*/
- async function scan() {
-  const detections = await faceapi
-    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-    .withFaceLandmarks()
-    .withFaceDescriptors();
-
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // 🚫 Batasi 1 wajah saja
-  if (detections.length !== 1) {
-    log.innerHTML = "⚠️ Hadapkan 1 wajah saja ke kamera";
-    return setTimeout(scan, 500);
-  }
-
-  const det = detections[0];
-  const best = matcher.findBestMatch(det.descriptor);
-  const box = det.detection.box;
-
-  // Gambar nama
-  ctx.fillStyle = "lime";
-  ctx.font = "22px Arial";
-  ctx.fillText(best.label, box.x + 5, box.y - 10);
-
-  // 🚫 Wajah tidak dikenal
-  if (best.label === "unknown") {
-    log.innerHTML = "❌ Wajah tidak dikenal";
-    return setTimeout(scan, 500);
-  }
-
-  // =====================
-  // DETEKSI KEDIP
-  // =====================
-  const leftEye = det.landmarks.getLeftEye();
-  const rightEye = det.landmarks.getRightEye();
-
-  const ear =
-    (eyeEAR(leftEye) + eyeEAR(rightEye)) / 2;
-
-  // threshold aman
-  if (ear < 0.22 && lastEAR >= 0.22) {
-    blinked = true;
-    log.innerHTML = "👁️ Kedip terdeteksi";
-  }
-
-  lastEAR = ear;
-
-  // ✅ Absensi hanya jika kedip
-  if (blinked) {
-    absen(best.label);
-    blinked = false;
-  }
-
-  setTimeout(scan, 500);
-}
-
-
-
-
-  /* kedip  */
+/* ===============================
+   UTIL KEDIP
+================================ */
 function distance(p1, p2) {
   return Math.hypot(p1.x - p2.x, p1.y - p2.y);
 }
@@ -111,49 +60,110 @@ function eyeEAR(eye) {
   const A = distance(eye[1], eye[5]);
   const B = distance(eye[2], eye[4]);
   const C = distance(eye[0], eye[3]);
-  return (A + B) / (2.0 * C);
+  return (A + B) / (2 * C);
 }
 
-  
-/* -----------------------------
-   MULAI
-------------------------------*/
+/* ===============================
+   LOOP DETEKSI
+================================ */
+async function scan() {
+  const detections = await faceapi
+    .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 🚫 hanya 1 wajah
+  if (detections.length !== 1) {
+    log.innerHTML = "⚠️ Hadapkan SATU wajah ke kamera";
+    eyeCloseCount = 0;
+    return setTimeout(scan, 150);
+  }
+
+  const det = detections[0];
+  const best = matcher.findBestMatch(det.descriptor);
+
+  // 🚫 wajah tidak dikenal
+  if (best.label === "unknown") {
+    log.innerHTML = "❌ Wajah tidak dikenal";
+    return setTimeout(scan, 150);
+  }
+
+  // tampilkan nama
+  const box = det.detection.box;
+  ctx.fillStyle = "lime";
+  ctx.font = "20px Arial";
+  ctx.fillText(best.label, box.x + 5, box.y - 10);
+
+  // =====================
+  // DETEKSI KEDIP
+  // =====================
+  const leftEye = det.landmarks.getLeftEye();
+  const rightEye = det.landmarks.getRightEye();
+
+  const ear = (eyeEAR(leftEye) + eyeEAR(rightEye)) / 2;
+  console.log("EAR:", ear.toFixed(3));
+
+  if (ear < 0.21) {
+    eyeCloseCount++;
+  } else {
+    if (eyeCloseCount >= 2) {
+      blinked = true;
+      log.innerHTML = "👁️ Kedip terdeteksi";
+    }
+    eyeCloseCount = 0;
+  }
+
+  // absensi
+  if (blinked) {
+    absen(best.label);
+    blinked = false;
+  }
+
+  setTimeout(scan, 150);
+}
+
+/* ===============================
+   START SISTEM
+================================ */
 async function start() {
-  log.innerHTML = "⏳ Loading model...";
+  log.innerHTML = "⏳ Memuat model AI...";
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri("models"),
     faceapi.nets.faceLandmark68Net.loadFromUri("models"),
     faceapi.nets.faceRecognitionNet.loadFromUri("models")
   ]);
-  log.innerHTML = "⏳ Loading data wajah...";
 
+  log.innerHTML = "⏳ Memuat data wajah...";
   const data = await fetch("faces.json").then(r => r.json());
-  const labeled = data.map(p => {
-  // buat label: "Muhlis | 0003"
-  const labelGabungan = p.name + " | " + p.nis;
 
-  return new faceapi.LabeledFaceDescriptors(
-    labelGabungan,
-    p.descriptors.map(d => new Float32Array(d))
+  const labeled = data.map(p =>
+    new faceapi.LabeledFaceDescriptors(
+      p.name + " | " + p.nis,
+      p.descriptors.map(d => new Float32Array(d))
+    )
   );
-});
-  matcher = new faceapi.FaceMatcher(labeled, 0.7);
- // matcher = new faceapi.FaceMatcher(labeled, 0.45);
-  log.innerHTML = "📷 Mengaktifkan kamera...";
 
-  navigator.mediaDevices.getUserMedia({ video: { width:720, height:480 } })
-    .then(stream => {
-      video.srcObject = stream;
-      video.onplaying = () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        log.innerHTML = "🔥 Sistem siap — tampilkan wajah untuk absensi";
-        scan();
-      };
-    });
+  matcher = new faceapi.FaceMatcher(labeled, 0.7);
+
+  log.innerHTML = "📷 Mengaktifkan kamera...";
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { width: 720, height: 480 }
+  });
+
+  video.srcObject = stream;
+  video.onplaying = () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    log.innerHTML = "🔥 Sistem siap — KEDIPKAN MATA";
+    scan();
+  };
 }
 
 start();
 </script>
+
 </body>
 </html>
