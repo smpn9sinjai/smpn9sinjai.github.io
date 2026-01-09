@@ -75,7 +75,9 @@ ctx.fillText("NIS: " + nis, box.x + 5, box.y + 10);
     if (best.label !== "unknown") absen(best.label);
   });
 
-  requestAnimationFrame(scan);   // loop tercepat
+//  requestAnimationFrame(scan);   // loop tercepat
+  setTimeout(scan, 500);
+
 }
 
 /* -----------------------------
