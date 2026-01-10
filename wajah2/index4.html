@@ -102,7 +102,7 @@ async function start() {
     p.descriptors.map(d => new Float32Array(d))
   );
 });
-  matcher = new faceapi.FaceMatcher(labeled, 0.7);
+  matcher = new faceapi.FaceMatcher(labeled, 0.5);
  // matcher = new faceapi.FaceMatcher(labeled, 0.45);
   log.innerHTML = "📷 Mengaktifkan kamera...";
 
