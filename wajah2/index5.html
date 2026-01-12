@@ -95,7 +95,9 @@ async function capture() {
   }
 
   // bulatkan descriptor 2 angka
-  const rounded = Array.from(det.descriptor).map(n => Number(n.toFixed(2)));
+ // const rounded = Array.from(det.descriptor).map(n => Number(n.toFixed(2)));
+  //Tanpa bualatan 2
+  const rounded = Array.from(det.descriptor)
 
   fotoSiswa.push(rounded);
   alert("Foto wajah tersimpan!");
