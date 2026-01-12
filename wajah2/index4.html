@@ -106,7 +106,7 @@ async function start() {
  // matcher = new faceapi.FaceMatcher(labeled, 0.45);
   log.innerHTML = "📷 Mengaktifkan kamera...";
 //navigator.mediaDevices.getUserMedia({ video: { width:720, height:480 } })
-  navigator.mediaDevices.getUserMedia({ video: { width:1280, height:720 } })
+  navigator.mediaDevices.getUserMedia({ video: { width:720, height:480 } })
     .then(stream => {
       video.srcObject = stream;
       video.onplaying = () => {
