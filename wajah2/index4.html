@@ -68,7 +68,7 @@ const [nama, nis] = best.label.split(" | ");
 ctx.fillText(nama, box.x + 5, box.y - 15);
 
 // Baris 2 → NIS
-ctx.fillText("NIS: " + nis, box.x + 5, box.y + 10);
+//ctx.fillText("NIS: " + nis, box.x + 5, box.y + 10);
 
 
     // absen otomatis
@@ -102,7 +102,7 @@ async function start() {
     p.descriptors.map(d => new Float32Array(d))
   );
 });
-  matcher = new faceapi.FaceMatcher(labeled, 0.6);
+  matcher = new faceapi.FaceMatcher(labeled, 0.5);
  // matcher = new faceapi.FaceMatcher(labeled, 0.45);
   log.innerHTML = "📷 Mengaktifkan kamera...";
 
