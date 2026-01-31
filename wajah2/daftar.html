@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Pendaftaran Wajah RS Mode (Final)</title>
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<style>
+body { font-family: Arial; background:#f4f4f4; padding:20px; }
+video { width:360px; border:3px solid #000; }
+#info { font-size:18px; margin:10px 0; color:#333; }
+#status { font-size:16px; margin-top:10px; }
+button { font-size:16px; padding:8px 14px; }
+</style>
+</head>
+<body>
+
+<h2>📋 Pendaftaran Wajah — Mode RS</h2>
+
+<label>Nama:</label><br>
+<input id="nama" style="font-size:16px"><br><br>
+
+<label>NIS / ID:</label><br>
+<input id="nis" style="font-size:16px"><br><br>
+
+<div id="info">⏳ Loading...</div>
+
+<video id="cam" autoplay muted></video><br><br>
+
+<button onclick="capture()">📸 Ambil Wajah</button>
+<button onclick="simpan()">💾 Simpan ke faces.json</button>
+
+<pre id="output" style="background:#eee;padding:10px;margin-top:15px;"></pre>
+
+<script>
+const video = document.getElementById("cam");
+const info = document.getElementById("info");
+const output = document.getElementById("output");
+
+const POSES = [
+  "Hadap lurus ke kamera",
+  "Hadap sedikit ke KIRI",
+  "Hadap sedikit ke KANAN",
+  "Ekspresi SENYUM",
+  "Ekspresi NETRAL"
+];
+
+let step = 0;
+let descriptors = [];
+let semuaData = [];
+
+/* =============================
+   CAMERA
+============================= */
+navigator.mediaDevices.getUserMedia({
+  video: { width:720, height:480 }
+}).then(s => video.srcObject = s);
+
+/* =============================
+   LOAD MODEL
+============================= */
+Promise.all([
+  faceapi.nets.tinyFaceDetector.loadFromUri("models"),
+  faceapi.nets.faceLandmark68Net.loadFromUri("models"),
+  faceapi.nets.faceRecognitionNet.loadFromUri("models")
+]).then(()=> {
+  info.innerHTML = "👉 Pose 1: " + POSES[0];
+});
+
+/* =============================
+   MEAN DESCRIPTOR
+============================= */
+function meanDescriptor(descs) {
+  const mean = new Float32Array(descs[0].length);
+  descs.forEach(d => d.forEach((v,i)=> mean[i]+=v));
+  return Array.from(mean).map(v => v / descs.length);
+}
+
+/* =============================
+   CAPTURE
+============================= */
+async function capture() {
+  if (step >= POSES.length) return alert("Semua pose sudah diambil");
+
+  const det = await faceapi
+    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize:416 }))
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+  if (!det) return alert("Wajah tidak terdeteksi");
+
+  const box = det.detection.box;
+  if (box.width < 140 || box.height < 140)
+    return alert("Wajah terlalu kecil / jauh");
+
+  const leftEye = det.landmarks.getLeftEye();
+  const rightEye = det.landmarks.getRightEye();
+  const dx = rightEye[0].x - leftEye[0].x;
+  const dy = rightEye[0].y - leftEye[0].y;
+  const angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+  if (angle > 12) return alert("Wajah terlalu miring");
+
+  descriptors.push(Array.from(det.descriptor));
+
+  step++;
+  if (step < POSES.length) {
+    info.innerHTML = "👉 Pose " + (step+1) + ": " + POSES[step];
+  } else {
+    info.innerHTML = "✅ Semua pose berhasil diambil";
+  }
+}
+
+/* =============================
+   SIMPAN
+============================= */
+function simpan() {
+  const nama = document.getElementById("nama").value.trim();
+  const nis = document.getElementById("nis").value.trim();
+  if (!nama || !nis) return alert("Nama & ID wajib diisi");
+  if (descriptors.length < 5) return alert("Belum lengkap 5 pose");
+
+  const template = meanDescriptor(descriptors);
+
+  semuaData.push({
+    name: nama,
+    nis: nis,
+    descriptor: template
+  });
+
+  output.textContent = JSON.stringify(semuaData, null, 2);
+
+  // reset
+  descriptors = [];
+  step = 0;
+  info.innerHTML = "👉 Pose 1: " + POSES[0];
+  alert("Data wajah tersimpan (template RS)");
+}
+</script>
+
+<button onclick="
+const a=document.createElement('a');
+a.href='data:text/json,'+encodeURIComponent(JSON.stringify(semuaData));
+a.download='faces.json';
+a.click();
+">⬇ Download faces.json</button>
+
+</body>
+</html>
