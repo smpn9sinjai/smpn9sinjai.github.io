@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>QR Code Modern Level H</title>
+<script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #eef2ff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.18);
+  text-align: center;
+  width: 600px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+}
+
+button {
+  background: linear-gradient(135deg,#6366f1,#22c55e);
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 6px;
+}
+
+#qr {
+  margin: 20px auto;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>QR Code Modern (Level H)</h2>
+
+  <input id="text" value="https://sekolahku.sch.id" placeholder="Isi link / teks">
+
+  <div id="qr"></div>
+
+  <button onclick="updateQR()">Update QR</button>
+  <button onclick="downloadQR()">Download PNG</button>
+</div>
+<script>
+const qrCode = new QRCodeStyling({
+  width: 200,
+  height: 200,
+  data: "UPTD SMPN 9 Sinjai | BOS 2017 | Dapodik | Muhlis",
+  margin: 4, // kecil & aman
+
+  qrOptions: {
+    errorCorrectionLevel: "L"
+  },
+
+  image: "https://smpn9sinjai.sch.id/smp.jpg",
+  imageOptions: {
+    crossOrigin: "anonymous",
+    imageSize: 0.80, // 🔥 KECIL & AMAN
+    margin: 2
+  },
+
+  dotsOptions: {
+    type: "rounded",
+    gradient: {
+      type: "linear",
+      rotation: 0,
+      colorStops: [
+        { offset: 0, color: "#4f46e5" },
+        { offset: 1, color: "#22c55e" }
+      ]
+    }
+  },
+
+  cornersSquareOptions: {
+    type: "extra-rounded",
+    color: "#4338ca"
+  },
+
+  cornersDotOptions: {
+    type: "dot",
+    color: "#16a34a"
+  },
+
+  backgroundOptions: {
+    color: "#ffffff"
+  }
+});
+
+qrCode.append(document.getElementById("qr"));
+
+function updateQR() {
+  const val = document.getElementById("text").value;
+  qrCode.update({ data: val });
+}
+
+function downloadQR() {
+  qrCode.download({
+    name: "qrcode-smpn9-scan-aman",
+    extension: "png"
+  });
+}
+</script>
+
+
+</body>
+</html>
