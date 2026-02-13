@@ -1,0 +1,41 @@
+<html>
+
+<body>
+<textarea style="width:100%;height:80%"" id='tes'></textarea>
+<script>
+getPreferredMic()
+async function getPreferredMic() {
+
+  // Minta izin dulu supaya label device muncul
+  await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioInputs = devices.filter(d => d.kind === "audioinput");
+
+  
+  // Cari mic USB / OTGa
+  document.getElementById("tes").value=(JSON.stringify(audioInputs))
+  const otgMic = audioInputs.find(d =>
+   
+    d.label.toLowerCase().includes("usb") ||
+    d.label.toLowerCase().includes("otg") ||
+    d.label.toLowerCase().includes("external")
+  );
+
+  if (otgMic) {
+ 
+    console.log("Menggunakan Mic OTG:", otgMic.label);
+    return { audio: { deviceId: { exact: otgMic.deviceId } } };
+	alert('OTG')
+  }
+
+  // Kalau tidak ada OTG, pakai default mic
+  console.log("Mic OTG tidak ditemukan, pakai mic bawaan");
+  return { audio: true };
+}
+
+
+</script>
+
+</body>
+</html>
