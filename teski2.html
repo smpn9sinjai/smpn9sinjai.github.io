@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Tes Mic</title>
+</head>
+<body>
+
+<h2>Tes Microphone</h2>
+
+<button onclick="initMic()">Minta Izin Mic</button>
+<br><br>
+
+<select id="micSelect"></select>
+<br><br>
+
+<button onclick="startRecord()">Start Record</button>
+<button onclick="stopRecord()">Stop Record</button>
+
+<br><br>
+<audio id="audioPlayback" controls></audio>
+
+<script>
+
+let mediaRecorder;
+let audioChunks = [];
+let currentStream;
+
+async function initMic() {
+    try {
+        // WAJIB minta izin dulu
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+
+        const micSelect = document.getElementById("micSelect");
+        micSelect.innerHTML = "";
+
+        devices.forEach(function(device) {
+            if (device.kind === "audioinput") {
+                const option = document.createElement("option");
+                option.value = device.deviceId;
+                option.text = device.label || "Mic tanpa nama";
+                micSelect.appendChild(option);
+            }
+        });
+
+        alert("Mic siap digunakan");
+
+    } catch (err) {
+        alert("Error: " + err);
+    }
+}
+
+async function startRecord() {
+    const micId = document.getElementById("micSelect").value;
+
+    const constraints = {
+        audio: {
+            deviceId: micId ? { exact: micId } : undefined
+        }
+    };
+
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    mediaRecorder = new MediaRecorder(currentStream);
+
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = function(event) {
+        audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = function() {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        document.getElementById("audioPlayback").src = audioUrl;
+    };
+
+    mediaRecorder.start();
+}
+
+function stopRecord() {
+    if (mediaRecorder) {
+        mediaRecorder.stop();
+        currentStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+    }
+}
+
+</script>
+
+</body>
+</html>
