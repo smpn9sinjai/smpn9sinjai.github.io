@@ -2,73 +2,105 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Voice Bot Siswa</title>
+  <title>Voice Bot Siswa (Continuous)</title>
   <style>
-    body {
-      font-family: Arial;
-      padding: 20px;
-      background: #f5f5f5;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #result, #data {
-      margin-top: 20px;
-      padding: 10px;
-      background: #fff;
-      border-radius: 8px;
-    }
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    button { padding: 10px 20px; margin-right: 10px; }
+    .box { margin-top: 15px; padding: 10px; background: #fff; border-radius: 8px; }
+    .active { color: green; }
+    .off { color: red; }
   </style>
 </head>
 <body>
 
-  <h2>🎤 Voice Search Siswa</h2>
-  <button onclick="startRecognition()">Mulai Bicara</button>
+<h2>🎤 Voice Bot Siswa (Auto Jalan Terus)</h2>
 
-  <div id="result">Hasil suara: -</div>
-  <div id="data">Data siswa: -</div>
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
 
-  <script>
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+<div class="box">Status: <span id="status" class="off">OFF</span></div>
+<div class="box">Hasil suara: <span id="result">-</span></div>
+<div class="box">Data siswa: <pre id="data">-</pre></div>
 
-    if (!SpeechRecognition) {
-      alert("Browser tidak mendukung speech recognition (pakai Chrome)");
-    }
+<script>
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'id-ID';
-    recognition.interimResults = false;
+if (!SpeechRecognition) {
+  alert("Gunakan Chrome");
+}
 
-    function startRecognition() {
-      recognition.start();
-    }
+const recognition = new SpeechRecognition();
 
-    recognition.onresult = async (event) => {
-      const text = event.results[0][0].transcript;
-      document.getElementById("result").innerText = "Hasil suara: " + text;
+recognition.lang = "id-ID";
+recognition.continuous = true;
+recognition.interimResults = true;
 
-      // kirim ke API siswa
-      try {
-        const res = await fetch("/api/siswa?q=" + encodeURIComponent(text));
-        const data = await res.json();
+let isRunning = false;
 
-        if (data.length === 0) {
-          document.getElementById("data").innerText = "Data tidak ditemukan";
-        } else {
-          document.getElementById("data").innerText = JSON.stringify(data, null, 2);
-        }
+// START
+function start() {
+  if (isRunning) return;
+  isRunning = true;
+  recognition.start();
+  document.getElementById("status").innerText = "ON";
+  document.getElementById("status").className = "active";
+}
 
-      } catch (err) {
-        document.getElementById("data").innerText = "Error: " + err.message;
-      }
-    };
+// STOP
+function stop() {
+  isRunning = false;
+  recognition.stop();
+  document.getElementById("status").innerText = "OFF";
+  document.getElementById("status").className = "off";
+}
 
-    recognition.onerror = (event) => {
-      alert("Error: " + event.error);
-    };
-  </script>
+// HASIL SUARA
+recognition.onresult = async (event) => {
+  let text = "";
+
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    text += event.results[i][0].transcript;
+  }
+
+  document.getElementById("result").innerText = text;
+
+  // hanya kirim kalau kalimat sudah final
+  if (event.results[event.results.length - 1].isFinal) {
+    cariSiswa(text);
+  }
+};
+
+// AUTO RESTART (BIAR TIDAK MATI)
+recognition.onend = () => {
+  if (isRunning) {
+    recognition.start();
+  }
+};
+
+// ERROR HANDLE
+recognition.onerror = (e) => {
+  console.log("Error:", e);
+
+  if (e.error === "not-allowed") {
+    alert("Izinkan microphone");
+    stop();
+  }
+};
+
+// QUERY API
+async function cariSiswa(query) {
+  try {
+    const res = await fetch("/api/siswa?q=" + encodeURIComponent(query));
+    const data = await res.json();
+
+    document.getElementById("data").innerText =
+      data.length ? JSON.stringify(data, null, 2) : "Tidak ditemukan";
+
+  } catch (err) {
+    document.getElementById("data").innerText = "Error: " + err.message;
+  }
+}
+</script>
 
 </body>
 </html>
