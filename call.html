@@ -1,8 +1,8 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-<title>Hubungi Siswa</title>
-	 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Broadcast WA Siswa</title>
 <style>
 body {
   font-family: Arial;
@@ -25,7 +25,7 @@ table {
 }
 
 th, td {
-  padding: 10px;
+  padding: 7px;
   border: 1px solid #ddd;
   text-align: left;
 }
@@ -67,13 +67,12 @@ textarea {
 
 
 <div class="controls">
-<span>Pilih</span>
+  <span>Pilih</span>
   <select onchange="go()" id="kelasSelect">
-
+  <option value="g">Guru</option>
     <option value="9">9</option>
     <option value="8">8</option>
     <option value="7">7</option>
-	    <option value="g">Guru</option>
 	 
   </select>
   
@@ -84,8 +83,7 @@ textarea {
   <thead>
     <tr>
       <th>No</th>
-      <th>Nama</th>
-      <th>No HP</th>
+	   <th>Nama/NoHP</th>
 	    <th>Kelas</th>
 	  <th>Call</th>
 	 
@@ -145,8 +143,8 @@ let ncall = `
     html += `
       <tr id="row${i}" data-nohp="${s.nohp}">
         <td>${i+1}</td>
-        <td>${s.nama}</td>
-        <td>${s.nohp}</td>
+        <td>${s.nama}<br>${s.nohp}</td>
+        
         <td>${s.kelas || "-"}</td>
         <td>${ncall}</td>
        
