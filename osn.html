@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -160,9 +161,9 @@ body{
     FULL SCREEN
 </button>
 
- <div style="font-size:40px;font-weight:bold;position:fixed;left:2px;top:5px;border-right:6px solid white;border-bottom:6px solid white;padding:5px 20px;border-bottom-right-radius: 10px;" class="token" id="token">
-        TOKEN :<br>
-		<span style="font-size:70px;font-weight:bold">AABBGG</span>
+ <div style="font-size:40px;font-weight:bold;position:fixed;left:2px;top:5px;border-right:6px solid white;border-bottom:6px solid white;padding:5px 20px;border-bottom-right-radius: 10px;" >
+      <center><span id="status">  TOKEN :</span><br>
+		<span id="token" style="font-size:70px;font-weight:bold"> </span></center>
     </div>
 
 <div class="container">
@@ -173,8 +174,8 @@ body{
     </div>
 
     <div class="title">
-        <span style="font-size:60px">SEDANG BERLANGSUNG</span><br> 
-		OSNK-K 2026 | SMP
+        <span style="font-size:60px">Sedang Berlangsung</span><br> 
+		OSN-K 2026 | SMP
     </div>
 
     <div class="clock" id="clock">
@@ -246,6 +247,64 @@ function updateClock(){
 setInterval(updateClock,1000);
 updateClock();
 
+
+let ws;
+let reconnectDelay = 3000; // 3 detik
+let shouldReconnect = true;
+
+function connectWebSocket() {
+   // ws = new WebSocket("ws://10.205.134.78:8080/ws");
+   ws = new WebSocket("wss://randee-streetless-gnashingly.ngrok-free.dev/ws")
+
+    document.getElementById("status").textContent = "🟢 Connecting...";
+
+    ws.onopen = () => {
+       // document.getElementById("status").textContent = "🟢 Connected";
+	     document.getElementById("status").textContent = "TOKEN :"
+    };
+
+    ws.onmessage = (e) => {
+	    let gs=JSON.parse(e.data)
+		 if(gs.kode==5){ 
+		   document.getElementById("token").textContent = (gs.isi || "").toUpperCase();
+	}
+	}
+
+    ws.onclose = () => {
+        document.getElementById("status").textContent = "🔴 Disconnected";
+        if (shouldReconnect) {
+            setTimeout(() => {
+                console.log("Reconnecting WebSocket...");
+                connectWebSocket();
+            }, reconnectDelay);
+        }
+    };
+
+    ws.onerror = () => {
+        document.getElementById("status").textContent = "⚠️ Error";
+        ws.close(); // biar masuk onclose dan reconnect
+    };
+}
+
+connectWebSocket(); // mulai saat halaman dibuka
+
+
+
+function sendMsg() {
+    if (ws.readyState === WebSocket.OPEN) {
+	   let sd=document.getElementById("msg").value
+	   
+	  
+	   
+	   let tgl = new Date();
+	    let stamp = `${tgl.toISOString().slice(0, 19)}`;
+		 let gd=JSON.stringify({"kode":5, "isi":sd, "tgl":stamp})
+        ws.send(gd);
+    } else {
+        alert("WebSocket belum terhubung!");
+    }
+}
+ 
 </script>
 
 </body>
