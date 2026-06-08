@@ -514,16 +514,14 @@ setInterval(updateClock,1000);
 updateClock();
 
 </script>
-<button id="fullscreenBtn">Toggle Fullscreen</button>
+<button onclick="fullscreenBtn()" id="fullscreenBtn">Toggle Fullscreen</button>
 
 <script>
-document.getElementById("fullscreenBtn").addEventListener("click", async () => {
-    if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-    } else {
-        await document.exitFullscreen();
-    }
-});
+
+   function fullscreenBtn(){ alert(1)
+      document.documentElement.requestFullscreen();
+
+   }
 </script>
 </body>
 </html>
