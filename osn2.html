@@ -1,0 +1,231 @@
+
+
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SIMULASI OSN 2026</title>
+ 
+
+<style>
+* {font-family:Orbitron, sans-serif}
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+}
+
+img{
+    position:fixed;
+    top:2px; /* Jarak atas agar tidak tertutup */
+    left:0;
+    width:100vw;
+   
+    object-fit:contain;
+    display:block;
+	 
+}
+.marquee{
+    
+    position:fixed;
+    bottom:0px;
+    left:0;
+    width:100%;
+  background: rgba(0, 0, 0, 0.6);
+    overflow:hidden;
+    padding:15px 0;
+}
+
+.marquee span{
+    display:inline-block;
+    white-space:nowrap;
+    padding-left:100%;
+    animation:jalan 20s linear infinite;
+    font-size:30px;
+	color:white;
+}
+
+@keyframes jalan{
+    from{transform:translateX(0);}
+    to{transform:translateX(-100%);}
+}
+.fullscreen-btn{
+    position:fixed;
+    top:20px;
+    right:20px;
+    padding:12px 20px;
+    font-size:18px;
+    font-weight:bold;
+    background:#fff;
+    color:#000;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    z-index:9999;
+}
+
+.fullscreen-btn:hover{
+    opacity:.9;
+}
+</style>
+</head>
+
+<body>
+<img src="osn.jpg" alt="Gambar">
+
+ 
+<button id="fullscreenBtn" class="fullscreen-btn">
+    FULL SCREEN
+</button>
+
+ <div style="color:white;font-size:40px;font-weight:bold;position:fixed;left:550px;top:570px;" >
+     
+		<span id="token" style="font-size:70px;font-weight:bold">AASSS </span></center>
+    </div>
+
+<div class="container">
+
+    
+
+    
+
+    <div class="clock" id="clock" style="color:white;font-size:120px;font-weight:bold;position:fixed;left:440px;top:300px;">
+        00:00:00
+    </div>
+
+    <div class="date" id="date" style="color:white;font-size:50px;font-weight:bold;position:fixed;left:450px;top:420px;">
+        -
+    </div>
+  
+    
+
+</div>
+
+<div  class="marquee">
+    <span>
+        ✨ SELAMAT DATANG PESERTA  OSN-K 2026 • SEMOGA SUKSES DAN MERAIH PRESTASI TERBAIK • UPTD SMP NEGERI 9 SINJAI ✨
+    </span>
+</div>
+
+<script>
+
+const btn = document.getElementById("fullscreenBtn");
+const cbb=document.getElementById("token")
+
+btn.addEventListener("click", async () => {
+    try{
+        await document.documentElement.requestFullscreen();
+        btn.style.display = "none";
+    }catch(err){
+        console.log(err);
+    }
+});
+
+document.addEventListener("fullscreenchange", () => {
+    if(!document.fullscreenElement){
+        btn.style.display = "block";
+    }
+});
+
+function updateClock(){
+      
+    const now = new Date();
+
+    document.getElementById("clock").innerHTML =
+        String(now.getHours()).padStart(2,'0') + ":" +
+        String(now.getMinutes()).padStart(2,'0') + ":" +
+        String(now.getSeconds()).padStart(2,'0');
+
+    const hari = [
+        "Minggu","Senin","Selasa","Rabu",
+        "Kamis","Jumat","Sabtu"
+    ];
+
+    const bulan = [
+        "Januari","Februari","Maret","April",
+        "Mei","Juni","Juli","Agustus",
+        "September","Oktober","November","Desember"
+    ];
+
+    document.getElementById("date").innerHTML =
+        hari[now.getDay()] + ", " +
+        now.getDate() + " " +
+        bulan[now.getMonth()] + " " +
+        now.getFullYear();
+}
+
+setInterval(updateClock,1000);
+//updateClock();
+
+
+function sitoken(){
+      if(cbb.innerText=="TOKEN :"){cbb.innerText=""}
+	  else {cbb.innerText="TOKEN :"}
+}
+//setInterval(sitoken,500);
+
+let ws;
+let reconnectDelay = 3000; // 3 detik
+let shouldReconnect = true;
+
+function connectWebSocket() {
+   // ws = new WebSocket("ws://10.205.134.78:8080/ws");
+   ws = new WebSocket("wss://randee-streetless-gnashingly.ngrok-free.dev/ws")
+
+   cbb.textContent = "🟢 Connecting...";
+
+    ws.onopen = () => {
+       // document.getElementById("status").textContent = "🟢 Connected";
+	   cbb.textContent = ""
+    };
+
+    ws.onmessage = (e) => {
+	    let gs=JSON.parse(e.data)
+		 if(gs.kode==5){ 
+		   document.getElementById("token").textContent = (gs.isi || "").toUpperCase();
+	}
+	}
+
+    ws.onclose = () => {
+        cbb.textContent = "🔴 Disconnected";
+        if (shouldReconnect) {
+            setTimeout(() => {
+                console.log("Reconnecting WebSocket...");
+                connectWebSocket();
+            }, reconnectDelay);
+        }
+    };
+
+    ws.onerror = () => {
+        cbb.textContent = "⚠️ Error";
+        ws.close(); // biar masuk onclose dan reconnect
+    };
+}
+
+connectWebSocket(); // mulai saat halaman dibuka
+
+
+
+function sendMsg() {
+    if (ws.readyState === WebSocket.OPEN) {
+	   let sd=document.getElementById("msg").value
+	   
+	  
+	   
+	   let tgl = new Date();
+	    let stamp = `${tgl.toISOString().slice(0, 19)}`;
+		 let gd=JSON.stringify({"kode":5, "isi":sd, "tgl":stamp})
+        ws.send(gd);
+    } else {
+        alert("WebSocket belum terhubung!");
+    }
+}
+ 
+</script>
+
+</body>
+</html>
+
