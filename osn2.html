@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>SIMULASI OSN 2026</title>
- 
+ <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
 <style>
 * {font-family:Orbitron, sans-serif}
@@ -83,7 +83,7 @@ img{
 
  <div style="color:white;font-size:40px;font-weight:bold;position:fixed;left:570px;top:600px;" >
      
-		<span id="token" style="font-size:70px;font-weight:bold"> </span></center>
+		<span id="token" style="font-size:70px;font-weight:bold"> </span>
     </div>
 
 <div class="container">
@@ -158,9 +158,9 @@ function updateClock(){
         bulan[now.getMonth()] + " " +
         now.getFullYear();
 }
-
+updateClock();
 setInterval(updateClock,1000);
-//updateClock();
+
 
 
 function sitoken(){
@@ -175,7 +175,7 @@ let shouldReconnect = true;
 
 function connectWebSocket() {
    // ws = new WebSocket("ws://10.205.134.78:8080/ws");
-   ws = new WebSocket("wss://randee-streetless-gnashingly.ngrok-free.dev/ws")
+   ws = new WebSocket("wss://randee-streetless-gnashingly.ngrok-free.dev/ws");
 
  //  cbb.textContent = "🟢 Connecting...";
 
@@ -212,7 +212,7 @@ connectWebSocket(); // mulai saat halaman dibuka
 
 
 function sendMsg() {
-    if (ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
 	   let sd=document.getElementById("msg").value
 	   
 	  
