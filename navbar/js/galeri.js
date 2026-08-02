@@ -1,0 +1,1 @@
+let t;function initGaleri(){let i=0;const e=document.getElementById('timer');t=setInterval(()=>{i++;if(e)e.textContent=i;},1000);}function destroyGaleri(){clearInterval(t);}window.initGaleri=initGaleri;window.destroyGaleri=destroyGaleri;

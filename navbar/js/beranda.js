@@ -1,0 +1,1 @@
+function initBeranda(){console.log('Beranda aktif')}window.initBeranda=initBeranda;

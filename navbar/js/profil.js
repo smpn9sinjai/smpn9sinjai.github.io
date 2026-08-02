@@ -1,0 +1,1 @@
+function initProfil(){const b=document.getElementById('btnProfil');const s=document.getElementById('status');if(b)b.onclick=()=>{s.textContent='JavaScript Profil dipanggil oleh app.js';};}window.initProfil=initProfil;

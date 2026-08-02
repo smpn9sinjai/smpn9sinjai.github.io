@@ -1,0 +1,1 @@
+function initGuru(){console.log('Guru aktif')}window.initGuru=initGuru;

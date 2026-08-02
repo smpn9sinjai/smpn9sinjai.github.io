@@ -1,0 +1,1 @@
+function initPengumuman(){const b=document.getElementById('btnPengumuman');const l=document.getElementById('list');if(b)b.onclick=()=>{l.innerHTML='<p>Dimuat '+new Date().toLocaleTimeString()+'</p>';};}window.initPengumuman=initPengumuman;
